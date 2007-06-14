@@ -50,7 +50,7 @@ def get_db():
 
 def update_available_shows():
     db = get_db()
-    r = requests.get('https://eztv-proxy.net/showlist/', verify=False)
+    r = requests.get(config.get("eztv", "host") + '/showlist/', verify=False)
     soup = BeautifulSoup(r.text)
 
 
@@ -65,7 +65,6 @@ def update_available_shows():
 
         info = url.strip('/').split('/')
 
-        url = "https://eztv.it" + url
         if len(info) == 3:
             show_id = info[1]
             path = info[2]
@@ -75,12 +74,15 @@ def update_available_shows():
         for font in row.find_all('font'):
             status = font.get_text()
 
+        print info
         db.query("INSERT INTO shows (`show_id`, `name`, `url`, `path`, `status`, `update`) VALUES ('%s', '%s', '%s', '%s', '%s', 0) ON DUPLICATE KEY UPDATE status = '%s', url = '%s'" % (show_id, db.escape_string(str(name)), url, path, db.escape_string(status), db.escape_string(status), url))
 
 
 def update_available_eps(url, show_id):
+    print url
+
     db = get_db()
-    ep = requests.get(url, verify=False)
+    ep = requests.get(config.get("eztv", "host") + url, verify=False)
     eps = BeautifulSoup(ep.text)
 
     for episode in eps.find_all('tr'):
@@ -207,8 +209,10 @@ def get_tvdb(show_id, imdb_id):
                     except:
                         fanart = ''
 
-
-                    db.query("UPDATE episodes SET img ='%s', tvdb = '%s', imdb = '%s', plot = '%s', name = '%s', `date` = '%s' WHERE number = '%s' AND season = '%s' AND show_id = '%s'" % (fanart, i, imdb, db.escape_string(overview), db.escape_string(ep_name), first_aired, number, season, show_id))
+                    try:
+                        db.query("UPDATE episodes SET img ='%s', tvdb = '%s', imdb = '%s', plot = '%s', name = '%s', `date` = '%s' WHERE number = '%s' AND season = '%s' AND show_id = '%s'" % (fanart, i, imdb, db.escape_string(overview), db.escape_string(ep_name), first_aired, number, season, show_id))
+                    except:
+                        print "DB Error"
                     print i, season, number, first_aired, imdb, ep_name, img
 
 
@@ -305,18 +309,24 @@ def download_missing():
         i = res.fetch_row(how=1)
 
     if downloading:
-        for number in config.get("twilio", "to").split(","):
-            twilio.messages.create(
-                to=number.strip(), 
-                from_=config.get("twilio", "from"),
-                body="Now Downloading... \n\n" + downloading,
-            )
+        print downloading
+#        for number in config.get("twilio", "to").split(","):
+#            twilio.messages.create(
+#                to=number.strip(), 
+#                from_=config.get("twilio", "from"),
+#                body="Now Downloading... \n\n" + downloading,
+#            )
 
 
 @app.route("/")
 def index():
+    active = 0
     db = get_db()
-    db.query("SELECT * FROM shows s WHERE `update` = 1 ORDER BY name ASC")
+    if active:
+        db.query("SELECT * FROM shows s WHERE `update` = 1 AND s.show_id IN (SELECT DISTINCT show_id FROM episodes) ORDER BY name ASC")
+    else:
+        db.query("SELECT * FROM shows s WHERE s.show_id IN (SELECT DISTINCT show_id FROM episodes) ORDER BY name ASC")
+
     res = db.store_result()
 
     updating = []
@@ -324,7 +334,11 @@ def index():
     index = 0
     while i:
         i[0]['index'] = index
-        i[0]['rate'] = float(i[0]['rating']) / 10 * 100
+        try:
+            i[0]['rate'] = float(i[0]['rating']) / 10 * 100
+        except:
+            i[0]['rate'] = 0
+            
         updating.append(i[0])
         i = res.fetch_row(how=1)
         index = index + 1
@@ -440,6 +454,11 @@ if __name__ == '__main__':
     elif sys.argv[1] == "info":
         db = get_db()
         db.query("SELECT * FROM shows WHERE `update` = 1 ORDER BY name ASC")
+        # download_missing()
+
+    elif sys.argv[1] == "info":
+        db = get_db()
+        db.query("SELECT * FROM shows ORDER BY name ASC")
         res = db.store_result()
 
         i = res.fetch_row(how=1)
@@ -461,5 +480,13 @@ if __name__ == '__main__':
         print config.get("twilio", "key"), config.get("twilio", "token")
 
 
+    elif sys.argv[1] == "install":
+        db = get_db()
+        update_available_shows()
+        db.query("SELECT * FROM shows ORDER BY show_id ASC")
+        res = db.store_result()
 
-
+        i = res.fetch_row(how=1)
+        while i:
+            update_available_eps(i[0]['url'], i[0]['show_id'])
+            i = res.fetch_row(how=1)
