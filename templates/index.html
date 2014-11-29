@@ -1,0 +1,22 @@
+{% include 'head.html' %}
+<body>
+
+    <div class="container">
+        <h1>Welcome to Tuner</h1>
+        <h3>Updating</h3>
+        <table class="table">
+        {% for show in shows_updating %}
+            <tr><td><a href="/{{show.path}}">{{show.name}}</a></td><td>{{show.status}}</td></tr>
+        {% endfor %}
+        </table>
+
+        <h3>Available</h3>
+        <table class="table">
+        {% for show in shows_available %}
+            <tr><td><a href="/{{show.path}}">{{show.name}}</a></td><td>{{show.status}}</td></tr>
+        {% endfor %}
+        </table>
+    </div>
+
+
+</body>

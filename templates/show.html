@@ -1,0 +1,23 @@
+{% include 'head.html' %}
+<body>
+
+    <div class="container">
+        <h1>{{show.name}}</h1>
+        <p>{{show.status}}</p>
+        <p>Downloading: {{show['update']}}</p>
+        
+        {% for season in episodes %}
+            <h3>{{season}}</h3>
+            <table class="table">
+            {% for episode in episodes[season] %}
+                <tr><td>Episode {{episode.number}}</td><td>{{episode.episode_date}}</td><td>{{episode.got}}</td></tr>
+            {% endfor %}
+            </table>
+
+        {% endfor %}
+        
+
+    </div>
+
+
+</body>
