@@ -8,6 +8,7 @@ import re
 import json
 import sys
 import ConfigParser
+import urllib
 from flask import Flask, g, url_for, render_template, jsonify
 app = Flask(__name__)
 
@@ -94,6 +95,55 @@ def update_available_eps(url, show_id):
 
         db.query("INSERT INTO episodes (`show_id`, `episode_id`, `number`, `season`, `magnet`, `downloaded`) VALUES ('%s', '%s', '%s', '%s', '%s', 0) ON DUPLICATE KEY UPDATE magnet = '%s'" % (show_id, episode_id, number, season, magnet, magnet))
 
+def fetch_show_info(show_id, name, imdb_id):
+    if ', The' in name:
+        name = 'The ' + ''.join(name.split(', The'))
+        # print name
+    
+    if imdb_id != '':
+        r = requests.get("http://www.omdbapi.com/?t=%s&y=&plot=short&r=json" % name)
+    else:
+        r = requests.get("http://www.omdbapi.com/?i=%s&y=&plot=short&r=json" % imdb_id)
+
+    a = json.loads(r.text)
+
+    db = get_db()
+
+    print a
+
+    try:
+        if 'imdbRating' not in a:
+            a['imdbRating'] = ""
+        else:
+            a['imdbRating'] = db.escape_string(a['imdbRating'])
+
+        if 'Plot' not in a:
+            a['Plot'] = ""
+        else:
+            a['Plot'] = db.escape_string(a['Plot'])
+
+        if 'Poster' not in a:
+            a['Poster'] = ""
+        else:
+            urllib.urlretrieve(a['Poster'], "static/img/" + show_id + ".jpg")
+            a['Poster'] = db.escape_string(a['Poster'])
+
+        if 'imdbID' not in a:
+            a['imdbID'] = ""
+
+        db.query("UPDATE shows SET rating = '%s', plot = '%s', img = '%s', imdb = '%s' WHERE show_id = %s" % (a['imdbRating'], a['Plot'], a['Poster'], a['imdbID'], show_id))
+        return a['imdbRating'], a['Plot'], a['Poster'], a['imdbID']
+    except:
+        if 'Poster' in a and a['Poster'] != 'N/A':
+            urllib.urlretrieve(a['Poster'], "static/img/" + show_id + ".jpg")
+        else:
+            a['Poster'] = ''
+        db.query("UPDATE shows SET imdb = '%s', img = '%s' WHERE show_id = %s" % ( a['imdbID'], a['Poster'], show_id))
+        # print "ERROR ERROR ERROR ERROR ERROR"
+        return False
+    
+
+
 
 def check_new_eps_active():
     db = get_db()
@@ -145,7 +195,7 @@ def download_missing():
 @app.route("/")
 def index():
     db = get_db()
-    db.query("SELECT * FROM shows s WHERE `update` = 1")
+    db.query("SELECT * FROM shows s WHERE `update` = 1 ORDER BY name ASC")
     res = db.store_result()
 
     updating = []
@@ -154,7 +204,7 @@ def index():
         updating.append(i[0])
         i = res.fetch_row(how=1)
 
-    db.query("SELECT * FROM shows s WHERE `update` != 1")
+    db.query("SELECT * FROM shows s WHERE `update` != 1 ORDER BY name ASC")
     res = db.store_result()
 
     available = []
@@ -173,7 +223,6 @@ def get_show(show_path):
     res = db.store_result()
     show = res.fetch_row(how=1)[0]
 
-    db = get_db()
     db.query("SELECT *, MAX(downloaded) got FROM episodes e JOIN shows s ON e.show_id = s.show_id  WHERE s.path = '%s' AND `update` = 1 GROUP BY s.show_id, season, number" % show_path)    
     res = db.store_result()
 
@@ -199,7 +248,16 @@ if __name__ == '__main__':
         check_new_eps_active()
         download_missing()
 
+    elif sys.argv[1] == "info":
+        db = get_db()
+        db.query("SELECT * FROM shows ORDER BY name ASC")    
+        res = db.store_result()
 
+        episodes = {}
+        i = res.fetch_row(how=1)
+        while i:
+            fetch_show_info(i[0]['show_id'], i[0]['name'], i[0]['imdb'])
+            i = res.fetch_row(how=1)
 
 
 
