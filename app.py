@@ -9,8 +9,14 @@ import json
 import sys
 import ConfigParser
 import urllib
+from lxml import etree
+from lxml.etree import fromstring
+from lxml import objectify
 from flask import Flask, g, url_for, render_template, jsonify
 app = Flask(__name__)
+
+reload(sys)
+sys.setdefaultencoding('utf-8')
 
 config = ConfigParser.RawConfigParser(allow_no_value=True)
 config.read('tuner.conf')
@@ -94,6 +100,105 @@ def update_available_eps(url, show_id):
         magnet = db.escape_string(re.findall(episode_magnet_regex, str(magnet))[0])
 
         db.query("INSERT INTO episodes (`show_id`, `episode_id`, `number`, `season`, `magnet`, `downloaded`) VALUES ('%s', '%s', '%s', '%s', '%s', 0) ON DUPLICATE KEY UPDATE magnet = '%s'" % (show_id, episode_id, number, season, magnet, magnet))
+
+def get_tvdb_id(show_id, imdb_id):
+    tvdb = requests.get("http://thetvdb.com/api/GetSeriesByRemoteID.php?imdbid="+imdb_id+"&language=en")
+    xml = tvdb.text.encode('utf-8')
+
+    parser = etree.XMLParser(ns_clean=True, recover=True, encoding='utf-8')
+    h = fromstring(xml, parser=parser)
+
+    if h is not None:
+        s = h.find("Series")
+        if s is not None:
+            try:
+                tvdb_id = s.find("seriesid").text
+            except:
+                tvdb_id = ''
+
+            try:
+                tvdb_baner = s.find("banner").text
+            except:
+                tvdb_baner = ''
+
+            try:
+                first_aired = s.find("FirstAired").text
+            except:
+                first_aired = ''
+
+            if tvdb_baner != '':
+                tvdb_baner = "http://www.thetvdb.com/banners/" + tvdb_baner
+                urllib.urlretrieve(tvdb_baner, "static/img/" + show_id + "_banner.jpg")
+            
+            print tvdb_id, first_aired
+
+            db = get_db()
+            db.query("UPDATE shows SET tvdb = '%s', banner = '%s', date = '%s' WHERE show_id = '%s'" % (tvdb_id, tvdb_baner, first_aired, show_id))
+
+
+            tvdb = requests.get("http://thetvdb.com/api/" + config.get("tvdb", "api_key") + "/series/" + tvdb_id + "/all/en.xml")
+            xml = tvdb.text.encode('utf-8')
+            a = fromstring(xml, parser=parser)
+
+            if a is not None:
+                s = a.find("Series")
+                if s is not None:
+                    img = s.find("fanart")
+                    if img is not None:
+                        fanart = "http://www.thetvdb.com/banners/" + img.text
+                        urllib.urlretrieve(fanart, "static/img/" + show_id + ".jpg")
+                        db.query("UPDATE shows SET img = '%s' WHERE show_id = '%s'" % (fanart, show_id))
+
+                episodes = a.findall("Episode")
+                for ep in episodes:
+                    try:
+                        i = ep.find("id").text
+                    except:
+                        i = ''
+
+                    try:
+                        number = ep.find("EpisodeNumber").text
+                    except:
+                        number = ''
+
+                    try:
+                        season = ep.find("SeasonNumber").text
+                    except:
+                        season = ''
+
+                    try:
+                        first_aired = ep.find("FirstAired").text
+                    except:
+                        first_aired = ''
+
+                    try:
+                        imdb = ep.find("IMDB_ID").text
+                    except:
+                        imdb = ''
+
+                    try:
+                        overview = ep.find("overview").text.encode('utf-8')
+                    except:
+                        overview = ''
+
+                    try:
+                        ep_name = ep.find("EpisodeName").text.encode('utf-8')
+                    except:
+                        ep_name = ''
+
+                    try:
+                        img = ep.find("filename").text
+                        fanart = "http://www.thetvdb.com/banners/" + img
+                        urllib.urlretrieve(fanart, "static/img/" + show_id + "_" + season + "_" + number + ".jpg")
+                    except:
+                        fanart = ''
+
+
+                    db.query("UPDATE episodes SET img ='%s', tvdb = '%s', imdb = '%s', plot = '%s', name = '%s', `date` = '%s' WHERE number = '%s' AND season = '%s' AND show_id = '%s'" % (fanart, i, imdb, db.escape_string(overview), db.escape_string(ep_name), first_aired, number, season, show_id))
+                    print i, season, number, first_aired, imdb, overview, ep_name, img
+            
+
+
 
 def fetch_show_info(show_id, name, imdb_id):
     if ', The' in name:
@@ -260,11 +365,22 @@ if __name__ == '__main__':
         db.query("SELECT * FROM shows WHERE `update` = 1 ORDER BY name ASC")
         res = db.store_result()
 
-        episodes = {}
         i = res.fetch_row(how=1)
         while i:
             fetch_show_info(i[0]['show_id'], i[0]['name'], i[0]['imdb'])
             i = res.fetch_row(how=1)
+    
+    elif sys.argv[1] == "tvdb":
+        db = get_db()
+        db.query("SELECT * FROM shows WHERE `update` = 1 ORDER BY name ASC")
+        res = db.store_result()
+
+        i = res.fetch_row(how=1)
+        while i:
+            get_tvdb_id(i[0]['show_id'], i[0]['imdb'])
+            i = res.fetch_row(how=1)
+
+
 
 
 
