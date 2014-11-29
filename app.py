@@ -114,15 +114,21 @@ def fetch_show_info(show_id, name, imdb_id):
     try:
         if 'imdbRating' not in a:
             a['imdbRating'] = ""
+        elif a['imdbRating'] == 'N/A':
+            a['imdbRating'] = ""
         else:
             a['imdbRating'] = db.escape_string(a['imdbRating'])
 
         if 'Plot' not in a:
             a['Plot'] = ""
+        elif a['Plot'] == 'N/A':
+            a['Plot'] = ""
         else:
             a['Plot'] = db.escape_string(a['Plot'])
 
         if 'Poster' not in a:
+            a['Poster'] = ""
+        elif a['Poster'] == 'N/A':
             a['Poster'] = ""
         else:
             urllib.urlretrieve(a['Poster'], "static/img/" + show_id + ".jpg")
