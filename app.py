@@ -100,7 +100,7 @@ def fetch_show_info(show_id, name, imdb_id):
         name = 'The ' + ''.join(name.split(', The'))
         # print name
     
-    if imdb_id != '':
+    if imdb_id == '':
         r = requests.get("http://www.omdbapi.com/?t=%s&y=&plot=short&r=json" % name)
     else:
         r = requests.get("http://www.omdbapi.com/?i=%s&y=&plot=short&r=json" % imdb_id)
@@ -158,6 +158,7 @@ def check_new_eps_active():
     i = res.fetch_row(how=1)
     while i:
         update_available_eps(i[0]['url'], i[0]['show_id'])
+        fetch_show_info(i[0]['show_id'], i[0]['name'], i[0]['imdb'])
         i = res.fetch_row(how=1)
 
 def download_missing():
@@ -256,7 +257,7 @@ if __name__ == '__main__':
 
     elif sys.argv[1] == "info":
         db = get_db()
-        db.query("SELECT * FROM shows ORDER BY name ASC")    
+        db.query("SELECT * FROM shows WHERE `update` = 1 ORDER BY name ASC")
         res = db.store_result()
 
         episodes = {}
