@@ -36,7 +36,7 @@ def teardown_request(exception):
 
 def get_db():
     global db
-    if db is not None:
+    if db is None:
         before_request()
     return db
 
