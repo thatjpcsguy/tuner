@@ -192,7 +192,7 @@ def get_show(show_path):
 
 if __name__ == '__main__':
     if sys.argv[1] == "serve":
-        app.run(debug=config.getboolean("app", "debug"))
+        app.run(host="0.0.0.0", debug=config.getboolean("app", "debug"))
 
     elif sys.argv[1] == "update":
         update_available_shows()
