@@ -6,14 +6,14 @@
         <h3>Updating</h3>
         <table class="table">
         {% for show in shows_updating %}
-            <tr><td><a href="/{{show.path}}">{{show.name}}</a></td><td>{{show.status}}</td></tr>
+            <tr><td><img src="{{ url_for('static', filename='img/' + show.show_id + '.jpg') }}" /></td><td><a href="/{{show.path}}">{{show.name}} ({{show.rating}})</a></td><td>{{show.plot}}</td><td>{{show.status}}</td></tr>
         {% endfor %}
         </table>
 
         <h3>Available</h3>
         <table class="table">
         {% for show in shows_available %}
-            <tr><td><a href="/{{show.path}}">{{show.name}}</a></td><td>{{show.status}}</td></tr>
+            <tr><td><img src="{{ url_for('static', filename='img/' + show.show_id + '.jpg') }}" /></td><td><a href="/{{show.path}}">{{show.name}} ({{show.rating}})</a></td><td>{{show.plot}}</td><td>{{show.status}}</td></tr>
         {% endfor %}
         </table>
     </div>
