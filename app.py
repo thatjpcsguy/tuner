@@ -22,24 +22,23 @@ episode_magnet_regex = re.compile(ur'href="(.*)" title', re.IGNORECASE)
 
 transmission_server = "http://" + config.get("transmission", "host") + "/transmission/rpc"
 
+db = None
 
 @app.before_request
 def before_request():
-    g.db = _mysql.connect(host=config.get("db", "host"), user=config.get("db", "user"), passwd=config.get("db", "passwd"), db=config.get("db", "db"))
+    global db
+    db = _mysql.connect(host=config.get("db", "host"), user=config.get("db", "user"), passwd=config.get("db", "passwd"), db=config.get("db", "db"))
 
 @app.teardown_request
 def teardown_request(exception):
-    db = getattr(g, 'db', None)
     if db is not None:
         db.close()
 
 def get_db():
-    """Opens a new database connection if there is none yet for the
-    current application context.
-    """
-    if not hasattr(g, 'sqlite_db'):
+    global db
+    if db is not None:
         before_request()
-    return g.db
+    return db
 
 
 def update_available_shows():
