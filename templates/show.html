@@ -2,6 +2,7 @@
 <body>
 
     <div class="container">
+        <img class="banner-large" src="{{ url_for('static', filename='img/' + show.show_id + '_banner.jpg') }}" />
         <h1>{{show.name}}</h1>
         <p>{{show.status}}</p>
         <p>Downloading: {{show['update']}}</p>
@@ -10,7 +11,7 @@
             <h3>{{season}}</h3>
             <table class="table">
             {% for episode in episodes[season] %}
-                <tr><td>Episode {{episode.number}}</td><td>{{episode.episode_date}}</td><td>{{episode.got}}</td></tr>
+                <tr><td><img class="banner-small" src="{{ url_for('static', filename='img/' + show.show_id + '_' + episode.season + '_' + episode.number + '.jpg') }}" /></td><td>{{episode.number}} - {{episode.name}}</td><td>{{episode.plot}}</td><td>{{episode.date}}</td><td>{{episode.got}}</td></tr>
             {% endfor %}
             </table>
 
