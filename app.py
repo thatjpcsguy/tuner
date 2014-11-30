@@ -376,6 +376,56 @@ def update_show(show_path):
     return redirect("/"+show_path, code=301)
 
 
+@app.route("/download/<show_id>/<season>/<episode>")
+def download(show_id, season, episode):
+    db = get_db()
+    csrf = requests.get(transmission_server)
+    soup = BeautifulSoup(csrf.text)
+    session = soup.code.get_text().split(":")[1].strip()
+
+    headers = {'X-Transmission-Session-Id': session}
+
+    if episode:
+        db.query("SELECT * FROM episodes e JOIN shows s ON e.show_id = s.show_id WHERE show_id = '%s', season = '%s', number = '%s' GROUP BY s.show_id, season, number" % (show_id, season, episode))
+    else:
+        db.query("SELECT * FROM episodes e JOIN shows s ON e.show_id = s.show_id WHERE show_id = '%s', season = '%s' GROUP BY s.show_id, season, number" % (show_id, season))
+
+    res = db.store_result()
+    i = res.fetch_row(how=1)
+    
+    downloading = ""
+    while i:
+        downloading += i[0]['name']+ ' - Season ' + str(i[0]['season'])+', Episode '+ str(i[0]['number']) + "\n"
+        payload = {
+                "method": "torrent-add",
+                "arguments": {
+                    "paused": False,
+                    "filename": i[0]['magnet'],
+                    "download-dir": config.get("transmission", "dir") + "/%s/season %s/" % (i[0]['path'].replace("-", " "), i[0]['season'])
+                }
+            }
+        r = requests.post(transmission_server, data=json.dumps(payload), headers=headers)
+        if r.status_code == 200:
+            db.query("UPDATE episodes SET downloaded = 1 WHERE show_id = %s AND number = %s and season = %s" % (i[0]['show_id'], i[0]['number'], i[0]['season']))
+
+        i = res.fetch_row(how=1)
+
+    if downloading:
+        for number in config.get("twilio", "to").split(","):
+            twilio.messages.create(
+                to=number.strip(), 
+                from_=config.get("twilio", "from"),
+                body="Now Downloading... \n\n" + downloading,
+            )
+
+    db.query("SELECT * FROM shows WHERE show_id = '%s'" % show_id)
+
+    res = db.store_result()
+    show = res.fetch_row(how=1)[0]
+
+    return redirect("/"+show.path)
+
+
 if __name__ == '__main__':
     if sys.argv[1] == "serve":
         app.run(host="0.0.0.0", debug=config.getboolean("app", "debug"))
