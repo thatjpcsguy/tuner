@@ -1,23 +1,36 @@
 {% include 'head.html' %}
 <body>
+    <div class="background" style="background-image: url('{{ url_for('static', filename='img/'+show.show_id + '.jpg') }}')"></div>
 
     <div class="container">
-        <img class="banner-large" src="{{ url_for('static', filename='img/' + show.show_id + '_banner.jpg') }}" />
-        <h1>{{show.name}}</h1>
-        <p>{{show.status}}</p>
+        <h1 class="title-large">{{show.name}}</h1>
+        <!-- <p>{{show.status}}</p>
         <p>Downloading: {{show['update']}}</p>
-        
+         -->
         {% for season in episodes %}
-            <h3>{{season}}</h3>
-            <table class="table">
+            <h3 class="season-title">{{season}}</h3>
+            <hr />
+            
             {% for episode in episodes[season] %}
-                <tr><td><img class="banner-small" src="{{ url_for('static', filename='img/' + show.show_id + '_' + episode.season + '_' + episode.number + '.jpg') }}" /></td><td>{{episode.number}} - {{episode.name}}</td><td>{{episode.plot}}</td><td>{{episode.date}}</td><td>{{episode.got}}</td></tr>
-            {% endfor %}
-            </table>
 
+                {% if episode.index % 6 == 0 %}
+                    <div class="row">
+                {% endif %}
+
+                <div class="col-md-2">
+                    <img class="show-thumb" src="{{ url_for('static', filename='img/' + show.show_id + '_' + episode.season + '_' + episode.number + '.jpg') }}" />
+                    <!-- <p><strong>{{episode.date}}</strong></p> -->
+                    <h4 class="episode-title">{{episode.number}} - {{episode.name}}</h4>
+                    <br />
+                </div>
+
+                {% if episode.index % 6 == 5 or episode.index == episode.max %}
+                    </div>
+                {% endif %}
+
+            {% endfor %}
         {% endfor %}
         
-
     </div>
 
 

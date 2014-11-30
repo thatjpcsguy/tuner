@@ -1,3 +1,79 @@
+html, body {
+	padding: 0;
+	margin: 0;
+}
+
+* {
+	-webkit-padding-start: 0;
+	-moz-padding-start: 0;
+}
+
 .banner-small {
-	height: 60px;
+	width: 100%;
+	margin-top: 30px;
+}
+
+.show-block {
+	height: 220px;
+}
+
+.show-block .rating {
+	height: 3px;
+	background-color: black;
+	width: 100%;
+	margin-bottom: 10px;
+}
+
+.show-block .rating-inner {
+	background-color: red;
+	height: 3px;
+}
+
+.background {
+	position: fixed;
+	width: 100%;
+	height: 100%;
+	background-size: cover;
+	background-position: center;
+	z-index: -10000;
+	opacity: .7;
+	-webkit-filter: blur(5px); -moz-filter: blur(5px); -o-filter: blur(5px); -ms-filter: blur(5px); filter: blur(5px);
+}
+
+.title-large {
+	font-size: 160px;
+	text-transform: uppercase;
+	text-align: center;
+	color: white;
+    text-shadow: 0 0 5px #232323;
+    margin-top: 0;
+    padding-top: 50px;
+}
+
+.header {
+	padding-top: 50px;
+	background-color: #DDDDDD;
+	width: 100%;
+	height: 340px;
+	margin-top: 0;
+}
+
+.season-title {
+	text-shadow: 0 0 5px #232323;
+	color: white;
+}
+
+.episode-title {
+	color: white;
+	text-shadow: 0 0 5px #232323;
+	font-size: 16px;
+}
+
+.show-thumb {
+	width: 100%;
+	margin-bottom: 8px;
+}
+
+.container {
+	margin-bottom: 300px;
 }

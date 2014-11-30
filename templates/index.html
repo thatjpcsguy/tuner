@@ -1,21 +1,30 @@
 {% include 'head.html' %}
 <body>
-
+    <div class="header">
+        <h1 class="title-large">Tuner</h1>
+    </div>
     <div class="container">
-        <h1>Welcome to Tuner</h1>
-        <h3>Updating</h3>
-        <table class="table">
-        {% for show in shows_updating %}
-            <tr><td><img class="banner-small" src="{{ url_for('static', filename='img/' + show.show_id + '_banner.jpg') }}" /></td><td><a href="/{{show.path}}">{{show.name}} ({{show.rating}})</a></td><td>{{show.plot}}</td><td>{{show.status}}</td></tr>
-        {% endfor %}
-        </table>
+    {% for show in shows_updating %}
+        {% if show.index % 3 == 0 %}
+            <div class="row">
+        {% endif %}
+        
+            <div class="col-md-4 show-block">
+                <a href="/{{show.path}}">
+                    <img class="banner-small" src="{{ url_for('static', filename='img/' + show.show_id + '_banner.jpg') }}" />
+                </a>
+                <div class="rating">
+                    <div class="rating-inner" style="width: {{ show.rate }}%;"></div>
+                </div>
+                <p><strong>{{show.status}}</strong></p>
+                <p>{{show.plot}}</p>
+            </div>
 
-        <!-- <h3>Available</h3>
-        <table class="table">
-        {% for show in shows_available %}
-            <tr><td><img src="{{ url_for('static', filename='img/' + show.show_id + '_banner.jpg') }}" /></td><td><a href="/{{show.path}}">{{show.name}} ({{show.rating}})</a></td><td>{{show.plot}}</td><td>{{show.status}}</td></tr>
-        {% endfor %}
-        </table> -->
+        {% if show.index % 3 == 2 %}
+            </div>
+        {% endif %}
+    {% endfor %}
+
     </div>
 
 
