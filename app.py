@@ -377,7 +377,8 @@ def update_show(show_path):
 
 
 @app.route("/download/<show_id>/<season>/<episode>")
-def download(show_id, season, episode):
+@app.route("/download/<show_id>/<season>")
+def download(show_id, season, episode=False):
     db = get_db()
     csrf = requests.get(transmission_server)
     soup = BeautifulSoup(csrf.text)
