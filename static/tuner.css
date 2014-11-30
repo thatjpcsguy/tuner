@@ -93,9 +93,6 @@ html, body {
 
 .download-button {
 	float: right;
-}
-
-.download-button img {
 	height: 40px;
 	position: relative;
 	top: -45px;
