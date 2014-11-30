@@ -346,7 +346,7 @@ def get_show(show_path):
     if ', The' in show['name']:
         show['name'] = 'The ' + ''.join(show['name'].split(', The'))
 
-    db.query("SELECT *, MAX(downloaded) got FROM episodes e JOIN shows s ON e.show_id = s.show_id  WHERE s.path = '%s' AND `update` = 1 GROUP BY s.show_id, season, number ORDER BY number ASC" % show_path)    
+    db.query("SELECT *, MAX(downloaded) got FROM episodes e JOIN shows s ON e.show_id = s.show_id  WHERE s.path = '%s' AND `update` = 1 AND e.img IS NOT NULL AND e.img != '' GROUP BY s.show_id, season, number ORDER BY number ASC" % show_path)    
     res = db.store_result()
 
     episodes = {}
