@@ -457,7 +457,8 @@ if __name__ == '__main__':
             get_tvdb(i[0]['show_id'], i[0]['imdb'])
             i = res.fetch_row(how=1)
 
-
+    elif sys.argv[1] == "twilio":
+        print config.get("twilio", "key"), config.get("twilio", "token")
 
 
 
