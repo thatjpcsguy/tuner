@@ -12,7 +12,7 @@ import urllib
 from lxml import etree
 from lxml.etree import fromstring
 from lxml import objectify
-from flask import Flask, g, url_for, render_template, jsonify
+from flask import Flask, g, url_for, render_template, jsonify, redirect
 app = Flask(__name__)
 
 reload(sys)
@@ -101,7 +101,7 @@ def update_available_eps(url, show_id):
 
         db.query("INSERT INTO episodes (`show_id`, `episode_id`, `number`, `season`, `magnet`, `downloaded`) VALUES ('%s', '%s', '%s', '%s', '%s', 0) ON DUPLICATE KEY UPDATE magnet = '%s'" % (show_id, episode_id, number, season, magnet, magnet))
 
-def get_tvdb_id(show_id, imdb_id):
+def get_tvdb(show_id, imdb_id):
     tvdb = requests.get("http://thetvdb.com/api/GetSeriesByRemoteID.php?imdbid="+imdb_id+"&language=en")
     xml = tvdb.text.encode('utf-8')
 
@@ -151,13 +151,14 @@ def get_tvdb_id(show_id, imdb_id):
 
 
                 episodes_to_update = []
-                db.query("SELECT * FROM episodes  WHERE img = '' OR img IS NULL AND show_id = '%s' GROUP BY season, number" % show_id)
+                db.query("SELECT * FROM episodes WHERE img = '' OR img IS NULL AND show_id = '%s' GROUP BY season, number" % show_id)
                 res = db.store_result()
                 i = res.fetch_row(how=1)
                 while i:
-                    episodes_to_update.append(i[0]['season'] + '-' +i[0]['season'])
+                    episodes_to_update.append(i[0]['season'] + '-' +i[0]['number'])
                     i = res.fetch_row(how=1)
 
+                print episodes_to_update
 
                 episodes = a.findall("Episode")
                 for ep in episodes:
@@ -208,10 +209,7 @@ def get_tvdb_id(show_id, imdb_id):
 
 
                     db.query("UPDATE episodes SET img ='%s', tvdb = '%s', imdb = '%s', plot = '%s', name = '%s', `date` = '%s' WHERE number = '%s' AND season = '%s' AND show_id = '%s'" % (fanart, i, imdb, db.escape_string(overview), db.escape_string(ep_name), first_aired, number, season, show_id))
-                    print i, season, number, first_aired, imdb, overview, ep_name, img
-                    print overview
-            
-
+                    print i, season, number, first_aired, imdb, ep_name, img
 
 
 def fetch_show_info(show_id, name, imdb_id):
@@ -265,8 +263,6 @@ def fetch_show_info(show_id, name, imdb_id):
             a['Poster'] = ''
         db.query("UPDATE shows SET imdb = '%s', img = '%s' WHERE show_id = %s" % ( a['imdbID'], a['Poster'], show_id))
         return False
-    
-
 
 
 def check_new_eps_active():
@@ -346,7 +342,7 @@ def get_show(show_path):
     if ', The' in show['name']:
         show['name'] = 'The ' + ''.join(show['name'].split(', The'))
 
-    db.query("SELECT *, MAX(downloaded) got FROM episodes e JOIN shows s ON e.show_id = s.show_id  WHERE s.path = '%s' AND `update` = 1 AND e.img IS NOT NULL AND e.img != '' GROUP BY s.show_id, season, number ORDER BY number ASC" % show_path)    
+    db.query("SELECT *, MAX(downloaded) got FROM episodes e JOIN shows s ON e.show_id = s.show_id  WHERE s.path = '%s' GROUP BY s.show_id, season, number ORDER BY number ASC" % show_path)    
     res = db.store_result()
 
     episodes = {}
@@ -365,6 +361,20 @@ def get_show(show_path):
             episodes[i][j]['max'] = len(episodes[i])-1
 
     return render_template('show.html', show = show, episodes = episodes)
+
+@app.route("/<show_path>/update")
+def update_show(show_path):
+    db = get_db()
+    db.query("SELECT * FROM shows s WHERE path = '%s'" % show_path)    
+    res = db.store_result()
+    show = res.fetch_row(how=1)[0]
+
+    update_available_eps(show['url'], show['show_id'])
+    fetch_show_info(show['show_id'], show['name'], show['imdb'])
+    get_tvdb(show['show_id'], show['imdb'])
+
+    return redirect("/"+show_path, code=301)
+
 
 if __name__ == '__main__':
     if sys.argv[1] == "serve":
@@ -392,7 +402,7 @@ if __name__ == '__main__':
 
         i = res.fetch_row(how=1)
         while i:
-            get_tvdb_id(i[0]['show_id'], i[0]['imdb'])
+            get_tvdb(i[0]['show_id'], i[0]['imdb'])
             i = res.fetch_row(how=1)
 
 

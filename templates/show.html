@@ -20,7 +20,7 @@
                 <div class="col-md-2">
                     <img class="show-thumb" src="{{ url_for('static', filename='img/' + show.show_id + '_' + episode.season + '_' + episode.number + '.jpg') }}" />
                     <!-- <p><strong>{{episode.date}}</strong></p> -->
-                    <h4 class="episode-title">{{episode.number}} - {{episode.name}}</h4>
+                    <h4 class="episode-title"><span class="{{episode.got}} {% if episode.got == "1" %} bull-green {% endif %} {% if episode.got == "0" %} bull-red {% endif %}">&bull;</span> {{episode.number}} - {{episode.name}}</h4>
                     <br />
                 </div>
 
