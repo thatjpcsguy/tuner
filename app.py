@@ -177,7 +177,7 @@ def get_tvdb_id(show_id, imdb_id):
                         imdb = ''
 
                     try:
-                        overview = ep.find("overview").text.encode('utf-8')
+                        overview = ep.find("Overview").text.encode('utf-8')
                     except:
                         overview = ''
 
@@ -196,6 +196,7 @@ def get_tvdb_id(show_id, imdb_id):
 
                     db.query("UPDATE episodes SET img ='%s', tvdb = '%s', imdb = '%s', plot = '%s', name = '%s', `date` = '%s' WHERE number = '%s' AND season = '%s' AND show_id = '%s'" % (fanart, i, imdb, db.escape_string(overview), db.escape_string(ep_name), first_aired, number, season, show_id))
                     print i, season, number, first_aired, imdb, overview, ep_name, img
+                    print overview
             
 
 
