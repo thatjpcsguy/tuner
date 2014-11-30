@@ -349,10 +349,10 @@ def get_show(show_path):
     i = res.fetch_row(how=1)
     while i:
         i = i[0]
-        if "Season " + i['season'] not in episodes:
-            episodes["Season " + i['season']] = []
+        if i['season'] not in episodes:
+            episodes[i['season']] = []
 
-        episodes["Season " + i['season']].append(i)
+        episodes[i['season']].append(i)
         i = res.fetch_row(how=1)
 
     for i in episodes:

@@ -8,7 +8,7 @@
         <p>Downloading: {{show['update']}}</p>
          -->
         {% for season in episodes %}
-            <h3 class="season-title">{{season}}</h3><a class="download-button" href="/download/{{show.show_id}}/{{episodes[season].season}}"><img src="{{url_for('static', filename='download.png')}}" /></a>
+            <h3 class="season-title">Season {{season}}</h3><a class="download-button" href="/download/{{show.show_id}}/{{season}}"><img src="{{url_for('static', filename='download.png')}}" /></a>
             <hr />
             
             {% for episode in episodes[season] %}
