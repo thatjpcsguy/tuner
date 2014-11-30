@@ -387,9 +387,9 @@ def download(show_id, season, episode=False):
     headers = {'X-Transmission-Session-Id': session}
 
     if episode:
-        db.query("SELECT * FROM episodes e JOIN shows s ON e.show_id = s.show_id WHERE show_id = '%s' AND season = '%s' AND number = '%s' GROUP BY s.show_id, season, number" % (show_id, season, episode))
+        db.query("SELECT * FROM episodes e JOIN shows s ON e.show_id = s.show_id WHERE s.show_id = '%s' AND season = '%s' AND number = '%s' GROUP BY s.show_id, season, number" % (show_id, season, episode))
     else:
-        db.query("SELECT * FROM episodes e JOIN shows s ON e.show_id = s.show_id WHERE show_id = '%s' AND season = '%s' GROUP BY s.show_id, season, number" % (show_id, season))
+        db.query("SELECT * FROM episodes e JOIN shows s ON e.show_id = s.show_id WHERE s.show_id = '%s' AND season = '%s' GROUP BY s.show_id, season, number" % (show_id, season))
 
     res = db.store_result()
     i = res.fetch_row(how=1)
