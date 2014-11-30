@@ -412,6 +412,7 @@ def download(show_id, season, episode=False):
         i = res.fetch_row(how=1)
 
     if downloading:
+        global twilio
         for number in config.get("twilio", "to").split(","):
             twilio.messages.create(
                 to=number.strip(), 
