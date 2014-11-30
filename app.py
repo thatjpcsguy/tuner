@@ -149,6 +149,16 @@ def get_tvdb_id(show_id, imdb_id):
                         urllib.urlretrieve(fanart, "static/img/" + show_id + ".jpg")
                         db.query("UPDATE shows SET img = '%s' WHERE show_id = '%s'" % (fanart, show_id))
 
+
+                episodes_to_update = []
+                db.query("SELECT * FROM episodes  WHERE img = '' OR img IS NULL AND show_id = '%s' GROUP BY season, number" % show_id)
+                res = db.store_result()
+                i = res.fetch_row(how=1)
+                while i:
+                    episodes_to_update.append(i[0]['season'] + '-' +i[0]['season'])
+                    i = res.fetch_row(how=1)
+
+
                 episodes = a.findall("Episode")
                 for ep in episodes:
                     try:
@@ -165,6 +175,9 @@ def get_tvdb_id(show_id, imdb_id):
                         season = ep.find("SeasonNumber").text
                     except:
                         season = ''
+
+                    if season + '-' + number not in episodes_to_update:
+                        continue
 
                     try:
                         first_aired = ep.find("FirstAired").text
@@ -251,7 +264,6 @@ def fetch_show_info(show_id, name, imdb_id):
         else:
             a['Poster'] = ''
         db.query("UPDATE shows SET imdb = '%s', img = '%s' WHERE show_id = %s" % ( a['imdbID'], a['Poster'], show_id))
-        # print "ERROR ERROR ERROR ERROR ERROR"
         return False
     
 
@@ -313,20 +325,15 @@ def index():
 
     updating = []
     i = res.fetch_row(how=1)
+    index = 0
     while i:
+        i[0]['index'] = index
+        i[0]['rate'] = float(i[0]['rating']) / 10 * 100
         updating.append(i[0])
         i = res.fetch_row(how=1)
+        index = index + 1
 
-    db.query("SELECT * FROM shows s WHERE `update` != 1 ORDER BY name ASC")
-    res = db.store_result()
-
-    available = []
-    i = res.fetch_row(how=1)
-    while i:
-        available.append(i[0])
-        i = res.fetch_row(how=1)
-
-    return render_template('index.html', shows_updating = updating, shows_available = available)
+    return render_template('index.html', shows_updating = updating)
 
 
 @app.route("/<show_path>")
@@ -336,7 +343,10 @@ def get_show(show_path):
     res = db.store_result()
     show = res.fetch_row(how=1)[0]
 
-    db.query("SELECT *, MAX(downloaded) got FROM episodes e JOIN shows s ON e.show_id = s.show_id  WHERE s.path = '%s' AND `update` = 1 GROUP BY s.show_id, season, number" % show_path)    
+    if ', The' in show['name']:
+        show['name'] = 'The ' + ''.join(show['name'].split(', The'))
+
+    db.query("SELECT *, MAX(downloaded) got FROM episodes e JOIN shows s ON e.show_id = s.show_id  WHERE s.path = '%s' AND `update` = 1 GROUP BY s.show_id, season, number ORDER BY number ASC" % show_path)    
     res = db.store_result()
 
     episodes = {}
@@ -349,6 +359,10 @@ def get_show(show_path):
         episodes["Season " + i['season']].append(i)
         i = res.fetch_row(how=1)
 
+    for i in episodes:
+        for j in range(len(episodes[i])):
+            episodes[i][j]['index'] = j
+            episodes[i][j]['max'] = len(episodes[i])-1
 
     return render_template('show.html', show = show, episodes = episodes)
 
@@ -373,7 +387,7 @@ if __name__ == '__main__':
     
     elif sys.argv[1] == "tvdb":
         db = get_db()
-        db.query("SELECT * FROM shows WHERE `update` = 1 ORDER BY name ASC")
+        db.query("SELECT * FROM shows ORDER BY name ASC")
         res = db.store_result()
 
         i = res.fetch_row(how=1)
