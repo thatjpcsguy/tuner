@@ -97,3 +97,7 @@ html, body {
 	position: relative;
 	top: -45px;
 }
+
+.download-button img {
+	height: 40px;
+}
