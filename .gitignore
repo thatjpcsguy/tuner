@@ -1,0 +1,9 @@
+static/img/*.jpg
+*.log
+
+
+*/.DS_Store
+.DS_Store
+
+
+*.pyc
