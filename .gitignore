@@ -1,6 +1,7 @@
 static/img/*.jpg
 *.log
 
+*.conf
 
 */.DS_Store
 .DS_Store
