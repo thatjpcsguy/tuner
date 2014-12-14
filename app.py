@@ -50,7 +50,7 @@ def get_db():
 
 def update_available_shows():
     db = get_db()
-    r = requests.get('https://eztv.it/showlist/')
+    r = requests.get('https://eztv-proxy.net/showlist/', verify=False)
     soup = BeautifulSoup(r.text)
 
 
@@ -80,7 +80,7 @@ def update_available_shows():
 
 def update_available_eps(url, show_id):
     db = get_db()
-    ep = requests.get(url)
+    ep = requests.get(url, verify=False)
     eps = BeautifulSoup(ep.text)
 
     for episode in eps.find_all('tr'):
@@ -226,7 +226,7 @@ def fetch_show_info(show_id, name, imdb_id):
 
     db = get_db()
 
-    print a
+    #print a
 
     try:
         if 'imdbRating' not in a:
@@ -271,7 +271,7 @@ def check_new_eps_active():
     res = db.store_result()
     i = res.fetch_row(how=1)
     while i:
-        update_available_eps(i[0]['url'], i[0]['show_id'])
+        update_available_eps(i[0]['url'].replace('eztv.it', 'eztv-proxy.net'), i[0]['show_id'])
         fetch_show_info(i[0]['show_id'], i[0]['name'], i[0]['imdb'])
         i = res.fetch_row(how=1)
 
@@ -283,13 +283,13 @@ def download_missing():
 
     headers = {'X-Transmission-Session-Id': session}
 
-    db.query("SELECT * FROM episodes e JOIN shows s ON e.show_id = s.show_id  WHERE `update` = 1 GROUP BY s.show_id, season, number HAVING MAX(downloaded) = 0")
+    db.query("SELECT *, s.name show_name FROM episodes e JOIN shows s ON e.show_id = s.show_id  WHERE `update` = 1 GROUP BY s.show_id, season, number HAVING MAX(downloaded) = 0")
     res = db.store_result()
     i = res.fetch_row(how=1)
     
     downloading = ""
     while i:
-        downloading += i[0]['name']+ ' - Season ' + str(i[0]['season'])+', Episode '+ str(i[0]['number']) + "\n"
+        downloading += i[0]['show_name']+ ' - Season ' + str(i[0]['season'])+', Episode '+ str(i[0]['number']) + "\n"
         payload = {
                 "method": "torrent-add",
                 "arguments": {
