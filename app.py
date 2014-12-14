@@ -50,7 +50,7 @@ def get_db():
 
 def update_available_shows():
     db = get_db()
-    r = requests.get('https://eztv-proxy.net/showlist/', verify=False)
+    r = requests.get(config.get("eztv", "host") + '/showlist/', verify=False)
     soup = BeautifulSoup(r.text)
 
 
@@ -65,7 +65,6 @@ def update_available_shows():
 
         info = url.strip('/').split('/')
 
-        url = "https://eztv.it" + url
         if len(info) == 3:
             show_id = info[1]
             path = info[2]
@@ -79,8 +78,10 @@ def update_available_shows():
 
 
 def update_available_eps(url, show_id):
+    print url
+
     db = get_db()
-    ep = requests.get(url, verify=False)
+    ep = requests.get(config.get("eztv", "host") + url, verify=False)
     eps = BeautifulSoup(ep.text)
 
     for episode in eps.find_all('tr'):
@@ -435,7 +436,7 @@ if __name__ == '__main__':
     elif sys.argv[1] == "update":
         update_available_shows()
         check_new_eps_active()
-        download_missing()
+        # download_missing()
 
     elif sys.argv[1] == "info":
         db = get_db()
