@@ -13,6 +13,18 @@ html, body {
 	margin-top: 30px;
 }
 
+.banner-small-blank {
+        width: 100%;
+        margin-top: 30px;
+        height: 66px;
+        background-color: #343434;
+	color: white;
+        text-align: center;
+        text-transform: uppercase;
+        line-height: 70px;
+}
+
+
 .show-block {
 	height: 220px;
 }

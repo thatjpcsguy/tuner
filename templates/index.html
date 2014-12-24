@@ -11,7 +11,11 @@
         
             <div class="col-md-4 show-block">
                 <a href="/{{show.path}}">
-                    <img class="banner-small" src="{{ url_for('static', filename='img/' + show.show_id + '_banner.jpg') }}" />
+                    {% if show.banner %}
+                        <img data-banner="{{show.banner}}" class="banner-small" src="{{ url_for('static', filename='img/' + show.show_id + '_banner.jpg') }}" />
+                    {% else %}
+                        <div class="banner-small-blank">{{ show.name }}</div>
+                    {% endif %}
                 </a>
                 <div class="rating">
                     <div class="rating-inner" style="width: {{ show.rate }}%;"></div>

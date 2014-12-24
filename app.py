@@ -208,8 +208,10 @@ def get_tvdb(show_id, imdb_id):
                     except:
                         fanart = ''
 
-
-                    db.query("UPDATE episodes SET img ='%s', tvdb = '%s', imdb = '%s', plot = '%s', name = '%s', `date` = '%s' WHERE number = '%s' AND season = '%s' AND show_id = '%s'" % (fanart, i, imdb, db.escape_string(overview), db.escape_string(ep_name), first_aired, number, season, show_id))
+                    try:
+                        db.query("UPDATE episodes SET img ='%s', tvdb = '%s', imdb = '%s', plot = '%s', name = '%s', `date` = '%s' WHERE number = '%s' AND season = '%s' AND show_id = '%s'" % (fanart, i, imdb, db.escape_string(overview), db.escape_string(ep_name), first_aired, number, season, show_id))
+                    except:
+                        print "DB Error"
                     print i, season, number, first_aired, imdb, ep_name, img
 
 
@@ -316,8 +318,13 @@ def download_missing():
 
 @app.route("/")
 def index():
+    active = 0
     db = get_db()
-    db.query("SELECT * FROM shows s WHERE `update` = 1 ORDER BY name ASC")
+    if active:
+        db.query("SELECT * FROM shows s WHERE `update` = 1 AND s.show_id IN (SELECT DISTINCT show_id FROM episodes) ORDER BY name ASC")
+    else:
+        db.query("SELECT * FROM shows s WHERE s.show_id IN (SELECT DISTINCT show_id FROM episodes) ORDER BY name ASC")
+
     res = db.store_result()
 
     updating = []
@@ -325,7 +332,11 @@ def index():
     index = 0
     while i:
         i[0]['index'] = index
-        i[0]['rate'] = float(i[0]['rating']) / 10 * 100
+        try:
+            i[0]['rate'] = float(i[0]['rating']) / 10 * 100
+        except:
+            i[0]['rate'] = 0
+            
         updating.append(i[0])
         i = res.fetch_row(how=1)
         index = index + 1
@@ -440,7 +451,7 @@ if __name__ == '__main__':
 
     elif sys.argv[1] == "info":
         db = get_db()
-        db.query("SELECT * FROM shows WHERE `update` = 1 ORDER BY name ASC")
+        db.query("SELECT * FROM shows ORDER BY name ASC")
         res = db.store_result()
 
         i = res.fetch_row(how=1)
@@ -462,5 +473,13 @@ if __name__ == '__main__':
         print config.get("twilio", "key"), config.get("twilio", "token")
 
 
+    elif sys.argv[1] == "install":
+        db = get_db()
+        update_available_shows()
+        db.query("SELECT * FROM shows ORDER BY show_id ASC")
+        res = db.store_result()
 
-
+        i = res.fetch_row(how=1)
+        while i:
+            update_available_eps(i[0]['url'], i[0]['show_id'])
+            i = res.fetch_row(how=1)
