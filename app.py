@@ -276,7 +276,7 @@ def check_new_eps_active():
     i = res.fetch_row(how=1)
     while i:
         update_available_eps(i[0]['url'].replace('eztv.it', 'eztv-proxy.net'), i[0]['show_id'])
-        fetch_show_info(i[0]['show_id'], i[0]['name'], i[0]['imdb'])
+        #fetch_show_info(i[0]['show_id'], i[0]['name'], i[0]['imdb'])
         i = res.fetch_row(how=1)
 
 def download_missing():
@@ -302,6 +302,7 @@ def download_missing():
                     "download-dir": config.get("transmission", "dir") + "/%s/season %s/" % (i[0]['path'].replace("-", " "), i[0]['season'])
                 }
             }
+        print payload
         r = requests.post(transmission_server, data=json.dumps(payload), headers=headers)
         if r.status_code == 200:
             db.query("UPDATE episodes SET downloaded = 1 WHERE show_id = %s AND number = %s and season = %s" % (i[0]['show_id'], i[0]['number'], i[0]['season']))
@@ -310,12 +311,19 @@ def download_missing():
 
     if downloading:
         print downloading
-#        for number in config.get("twilio", "to").split(","):
-#            twilio.messages.create(
-#                to=number.strip(), 
-#                from_=config.get("twilio", "from"),
-#                body="Now Downloading... \n\n" + downloading,
-#            )
+        for number in config.get("twilio", "to").split(","):
+            send_sms(number.strip(), downloading)
+
+
+def send_sms(to, body):
+    try:
+        twilio.messages.create(
+                to=to, 
+                from_=config.get("twilio", "from"),
+                body=body
+            )
+    except:
+        print "could not send sms"
 
 
 @app.route("/")
@@ -454,11 +462,6 @@ if __name__ == '__main__':
     elif sys.argv[1] == "info":
         db = get_db()
         db.query("SELECT * FROM shows WHERE `update` = 1 ORDER BY name ASC")
-        # download_missing()
-
-    elif sys.argv[1] == "info":
-        db = get_db()
-        db.query("SELECT * FROM shows ORDER BY name ASC")
         res = db.store_result()
 
         i = res.fetch_row(how=1)
@@ -478,6 +481,8 @@ if __name__ == '__main__':
 
     elif sys.argv[1] == "twilio":
         print config.get("twilio", "key"), config.get("twilio", "token")
+        for number in config.get("twilio", "to").split(","):
+            send_sms(number.strip(), "Test Twilio Message")
 
 
     elif sys.argv[1] == "install":
