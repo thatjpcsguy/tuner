@@ -459,6 +459,9 @@ if __name__ == '__main__':
         check_new_eps_active()
         download_missing()
 
+    elif sys.argv[1] == "download":
+        download_missing()
+
     elif sys.argv[1] == "info":
         db = get_db()
         db.query("SELECT * FROM shows WHERE `update` = 1 ORDER BY name ASC")
