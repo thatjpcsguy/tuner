@@ -15,6 +15,9 @@ from lxml import objectify
 from flask import Flask, g, url_for, render_template, jsonify, redirect
 app = Flask(__name__)
 
+import urllib3
+urllib3.disable_warnings()
+
 reload(sys)
 sys.setdefaultencoding('utf-8')
 
@@ -75,8 +78,10 @@ def update_available_shows():
             status = font.get_text()
 
         print info
-        db.query("INSERT INTO shows (`show_id`, `name`, `url`, `path`, `status`, `update`) VALUES ('%s', '%s', '%s', '%s', '%s', 0) ON DUPLICATE KEY UPDATE status = '%s', url = '%s'" % (show_id, db.escape_string(str(name)), url, path, db.escape_string(status), db.escape_string(status), url))
-
+        try:
+            db.query("INSERT INTO shows (`show_id`, `name`, `url`, `path`, `status`, `update`) VALUES ('%s', '%s', '%s', '%s', '%s', 0) ON DUPLICATE KEY UPDATE status = '%s', url = '%s'" % (show_id, db.escape_string(str(name)), url, path, db.escape_string(status), db.escape_string(status), url))
+        except:
+            print "Error inserting show"
 
 def update_available_eps(url, show_id):
     print url
@@ -86,22 +91,26 @@ def update_available_eps(url, show_id):
     eps = BeautifulSoup(ep.text)
 
     for episode in eps.find_all('tr'):
-        ep_string = str(episode.find('a', class_="epinfo"))
-        info = re.findall(episode_info_regex, ep_string)
-        if len(info) > 0:
-            season = info[0][1]
-            number = info[0][2]
-        else:
-            continue
+        try:
+            ep_string = str(episode.find('a', class_="epinfo"))
+            info = re.findall(episode_info_regex, ep_string)
+            if len(info) > 0:
+                season = info[0][1]
+                number = info[0][2]
+            else:
+                continue
 
-        ep_id = re.findall(episode_id_regex, ep_string)
-        if len(ep_id) > 0:
-            episode_id = ep_id[0] 
+            ep_id = re.findall(episode_id_regex, ep_string)
+            if len(ep_id) > 0:
+                episode_id = ep_id[0] 
 
-        magnet = episode.find('a', class_="magnet")
-        magnet = db.escape_string(re.findall(episode_magnet_regex, str(magnet))[0])
+            magnet = episode.find('a', class_="magnet")
+            magnet = db.escape_string(re.findall(episode_magnet_regex, str(magnet))[0])
 
-        db.query("INSERT INTO episodes (`show_id`, `episode_id`, `number`, `season`, `magnet`, `downloaded`) VALUES ('%s', '%s', '%s', '%s', '%s', 0) ON DUPLICATE KEY UPDATE magnet = '%s'" % (show_id, episode_id, number, season, magnet, magnet))
+            db.query("INSERT INTO episodes (`show_id`, `episode_id`, `number`, `season`, `magnet`, `downloaded`) VALUES ('%s', '%s', '%s', '%s', '%s', 0) ON DUPLICATE KEY UPDATE magnet = '%s'" % (show_id, episode_id, number, season, magnet, magnet))
+        except:
+            print "unable to insert episode"
+
 
 def get_tvdb(show_id, imdb_id):
     tvdb = requests.get("http://thetvdb.com/api/GetSeriesByRemoteID.php?imdbid="+imdb_id+"&language=en")
