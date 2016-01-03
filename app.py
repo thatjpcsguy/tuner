@@ -16,7 +16,15 @@ from flask import Flask, g, url_for, render_template, jsonify, redirect
 app = Flask(__name__)
 
 import urllib3
-urllib3.disable_warnings()
+#urllib3.disable_warnings()
+
+#import certifi
+
+#http = urllib3.PoolManager(
+#    cert_reqs='CERT_REQUIRED', # Force certificate check.
+#    ca_certs=certifi.where(),  # Path to the Certifi bundle.
+#)
+
 
 reload(sys)
 sys.setdefaultencoding('utf-8')
