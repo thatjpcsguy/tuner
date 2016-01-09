@@ -61,7 +61,7 @@ def get_db():
 
 def update_available_shows():
     db = get_db()
-    r = requests.get(config.get("eztv", "host") + '/showlist/', verify=False)
+    r = requests.get(config.get("eztv", "host") + '/showlist/')
     soup = BeautifulSoup(r.text)
 
 
@@ -85,17 +85,18 @@ def update_available_shows():
         for font in row.find_all('font'):
             status = font.get_text()
 
-        print info
+        #print info
         try:
             db.query("INSERT INTO shows (`show_id`, `name`, `url`, `path`, `status`, `update`) VALUES ('%s', '%s', '%s', '%s', '%s', 0) ON DUPLICATE KEY UPDATE status = '%s', url = '%s'" % (show_id, db.escape_string(str(name)), url, path, db.escape_string(status), db.escape_string(status), url))
         except:
-            print "Error inserting show"
+            #print "Error inserting show"
+            pass
 
 def update_available_eps(url, show_id):
-    print url
+    #print url
 
     db = get_db()
-    ep = requests.get(config.get("eztv", "host") + url, verify=False)
+    ep = requests.get(config.get("eztv", "host") + url)
     eps = BeautifulSoup(ep.text)
 
     for episode in eps.find_all('tr'):
@@ -117,7 +118,8 @@ def update_available_eps(url, show_id):
 
             db.query("INSERT INTO episodes (`show_id`, `episode_id`, `number`, `season`, `magnet`, `downloaded`) VALUES ('%s', '%s', '%s', '%s', '%s', 0) ON DUPLICATE KEY UPDATE magnet = '%s'" % (show_id, episode_id, number, season, magnet, magnet))
         except:
-            print "unable to insert episode"
+            #print "unable to insert episode"
+            pass
 
 
 def get_tvdb(show_id, imdb_id):
@@ -149,7 +151,7 @@ def get_tvdb(show_id, imdb_id):
                 tvdb_baner = "http://www.thetvdb.com/banners/" + tvdb_baner
                 urllib.urlretrieve(tvdb_baner, "static/img/" + show_id + "_banner.jpg")
             
-            print tvdb_id, first_aired
+            #print tvdb_id, first_aired
 
             db = get_db()
             db.query("UPDATE shows SET tvdb = '%s', banner = '%s', date = '%s' WHERE show_id = '%s'" % (tvdb_id, tvdb_baner, first_aired, show_id))
@@ -177,7 +179,7 @@ def get_tvdb(show_id, imdb_id):
                     episodes_to_update.append(i[0]['season'] + '-' +i[0]['number'])
                     i = res.fetch_row(how=1)
 
-                print episodes_to_update
+                #print episodes_to_update
 
                 episodes = a.findall("Episode")
                 for ep in episodes:
@@ -229,8 +231,9 @@ def get_tvdb(show_id, imdb_id):
                     try:
                         db.query("UPDATE episodes SET img ='%s', tvdb = '%s', imdb = '%s', plot = '%s', name = '%s', `date` = '%s' WHERE number = '%s' AND season = '%s' AND show_id = '%s'" % (fanart, i, imdb, db.escape_string(overview), db.escape_string(ep_name), first_aired, number, season, show_id))
                     except:
-                        print "DB Error"
-                    print i, season, number, first_aired, imdb, ep_name, img
+                        #print "DB Error"
+                        pass
+                    #print i, season, number, first_aired, imdb, ep_name, img
 
 
 def fetch_show_info(show_id, name, imdb_id):
@@ -319,7 +322,7 @@ def download_missing():
                     "download-dir": config.get("transmission", "dir") + "/%s/season %s/" % (i[0]['path'].replace("-", " "), i[0]['season'])
                 }
             }
-        print payload
+        #print payload
         r = requests.post(transmission_server, data=json.dumps(payload), headers=headers)
         if r.status_code == 200:
             db.query("UPDATE episodes SET downloaded = 1 WHERE show_id = %s AND number = %s and season = %s" % (i[0]['show_id'], i[0]['number'], i[0]['season']))
@@ -327,7 +330,7 @@ def download_missing():
         i = res.fetch_row(how=1)
 
     if downloading:
-        print downloading
+        #print downloading
         for number in config.get("twilio", "to").split(","):
             send_sms(number.strip(), downloading)
 
@@ -340,7 +343,8 @@ def send_sms(to, body):
                 body=body
             )
     except:
-        print "could not send sms"
+        #print "could not send sms"
+        pass
 
 
 @app.route("/")
@@ -500,7 +504,7 @@ if __name__ == '__main__':
             i = res.fetch_row(how=1)
 
     elif sys.argv[1] == "twilio":
-        print config.get("twilio", "key"), config.get("twilio", "token")
+        #print config.get("twilio", "key"), config.get("twilio", "token")
         for number in config.get("twilio", "to").split(","):
             send_sms(number.strip(), "Test Twilio Message")
 
