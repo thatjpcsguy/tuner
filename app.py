@@ -119,7 +119,7 @@ def download_missing():
 
     headers = {'X-Transmission-Session-Id': session}
 
-    db.query("SELECT *, s.name show_name FROM episodes e JOIN shows s ON e.show_id = s.show_id  WHERE `download` = 1 GROUP BY s.show_id, season, number HAVING MAX(downloaded) = 0")
+    db.query("SELECT s.show_id, season, number, magnet, s.name show_name FROM episodes e JOIN shows s ON e.show_id = s.show_id  WHERE `download` = 1 GROUP BY s.show_id, season, number HAVING MAX(downloaded) = 0")
     res = db.store_result()
     i = res.fetch_row(how=1)
     
@@ -144,7 +144,7 @@ def download_missing():
     if downloading:
         print downloading
         # for number in config.get("twilio", "to").split(","):
-            
+
             # send_sms(number.strip(), downloading)
 
 
