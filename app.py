@@ -1,7 +1,7 @@
 #!/usr/local/bin/python
 
 from bs4 import BeautifulSoup
-from twilio.rest import TwilioRestClient 
+#from twilio.rest import TwilioRestClient 
 import requests
 import _mysql
 import re
@@ -23,7 +23,7 @@ sys.setdefaultencoding('utf-8')
 config = ConfigParser.RawConfigParser(allow_no_value=True)
 config.read('tuner.conf')
 
-twilio = TwilioRestClient(config.get("twilio", "key"), config.get("twilio", "token"))
+#twilio = TwilioRestClient(config.get("twilio", "key"), config.get("twilio", "token"))
 
 episode_info_regex = re.compile(ur'(S?([0-9]{1,2})[x|E]([0-9]{1,2}))', re.IGNORECASE)
 episode_id_regex = re.compile(ur'/ep/([0-9]*)/', re.IGNORECASE)
@@ -37,14 +37,14 @@ db = None
 def get_db():
     global db
     if db is None:
-        before_request()
+        db = _mysql.connect(host=config.get("db", "host"), user=config.get("db", "user"), passwd=config.get("db", "passwd"), db=config.get("db", "db"))
     return db
 
 
 def update_available_shows():
     db = get_db()
     r = requests.get(config.get("eztv", "host") + '/showlist/')
-    soup = BeautifulSoup(r.text)
+    soup = BeautifulSoup(r.text, "lxml")
 
 
     for row in soup.find_all('tr'):
@@ -77,7 +77,7 @@ def update_available_shows():
 def update_available_eps(url, show_id):
     db = get_db()
     ep = requests.get(config.get("eztv", "host") + url)
-    eps = BeautifulSoup(ep.text)
+    eps = BeautifulSoup(ep.text, "lxml")
 
     for episode in eps.find_all('tr'):
         try:
@@ -114,7 +114,7 @@ def check_new_eps_active():
 def download_missing():
     db = get_db()
     csrf = requests.get(transmission_server)
-    soup = BeautifulSoup(csrf.text)
+    soup = BeautifulSoup(csrf.text, "lxml")
     session = soup.code.get_text().split(":")[1].strip()
 
     headers = {'X-Transmission-Session-Id': session}
@@ -162,7 +162,7 @@ def download_missing():
 
 
 if __name__ == '__main__':
-    elif sys.argv[1] == "update":
+    if sys.argv[1] == "update":
         update_available_shows()
         check_new_eps_active()
         download_missing()
