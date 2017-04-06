@@ -109,6 +109,9 @@ def download_missing():
     db = get_db()
     csrf = requests.get(transmission_server)
     soup = BeautifulSoup(csrf.text, "lxml")
+    if soup.code is None:
+        print "Cannot connect to Transmission"
+        exit()
     session = soup.code.get_text().split(":")[1].strip()
 
     headers = {'X-Transmission-Session-Id': session}
