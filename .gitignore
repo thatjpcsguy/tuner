@@ -8,3 +8,6 @@ static/img/*.jpg
 
 
 *.pyc
+downloads/*
+cache/*
+magnets/*
