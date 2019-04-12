@@ -240,3 +240,11 @@ if __name__ == '__main__':
     if sys.argv[1] == "add":
         add(sys.argv[2])
 
+    if '--help' in sys.argv:
+        print("""./tv.py
+    got
+    search <name>
+    list <show_id> <season>
+    dl <episode_id>
+    add <show_id>
+    --auto""")

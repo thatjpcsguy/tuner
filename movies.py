@@ -193,3 +193,11 @@ if __name__ == '__main__':
                         movies[i][j]['id'], movies[i][j]['resolution'], movies[i][j]['quality'], movies[i][j]['se'], movies[i][j]['le']))
 
 
+    if '--help' in sys.argv:
+        print("""./movies.py
+    --search <term>
+    --cache <name>
+    --list
+    --download <id> <name>
+    --auto""")
+
