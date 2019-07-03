@@ -8,14 +8,16 @@ import multiprocessing
 import hashlib
 import os
 import sys
+import configparser
 
 from bs4 import BeautifulSoup
 import PTN
 
 
-_host = 'https://thepiratebay.bet'
+_host = 'https://thepiratebay.org'
 _page = '/top/207'
-
+_host_1337x = 'http://1337x.to'
+_page_1337x = '/top-100-eng-movies'
 
 def hash(x):
     return hashlib.sha256(str(x).lower().strip().encode('utf8')).hexdigest()
@@ -60,7 +62,7 @@ def list_top100(page=_page):
             quality = info['quality'] if 'quality' in info else 'Unknown'
             resolution = info['resolution'] if 'resolution' in info else 'Unknown'
             year = info['year'] if 'year' in info else 'XXXX'
-            title = info['title'].strip().rstrip('.')
+            title = info['title'].strip().rstrip('.').lower()
 
             magnet = ''
 
@@ -87,8 +89,61 @@ def list_top100(page=_page):
     return movies
 
 
+def list_top_1337x(page=_page_1337x):
+    ep = requests.get(_host_1337x + page)
+    soup = BeautifulSoup(ep.text, "lxml")
+
+    movies = {}
+    for row in soup.find_all('tr'):
+        # print('new row:')
+        # print(row)
+        links = row.find_all('a', href=True)
+        # print(links)
+        if not links:
+            continue
+        a = links[1]
+
+        se = row.find_all('td', class_='seeds')[0].get_text()
+        le = row.find_all('td', class_='leeches')[0].get_text()
+        # print(se, le)
+
+        href = a.get('href')
+        id = href.split('/torrent/')[1].split('/')[0]
+
+        name = a.get_text()
+        info = PTN.parse(name)
+        quality = info['quality'] if 'quality' in info else 'Unknown'
+        resolution = info['resolution'] if 'resolution' in info else 'Unknown'
+        year = info['year'] if 'year' in info else 'XXXX'
+        title = info['title'].strip().rstrip('.')
+
+        magnet = ''
+
+        if title not in movies:
+            movies[title] = {}
+
+        movies[title][id] = {
+            'hash': hash(title),
+            'title': title,
+            'id': id,
+            'url': href,
+            'magnet': False,
+            'le': le,
+            'se': se,
+            'year': year, 
+            'raw': name, 
+            'quality': quality, 
+            'resolution': resolution,
+            'parse': info,
+            'good': (quality.lower() in ('brrip', 'bluray', 'webrip', 'web-dl')) and resolution == '1080p',
+            'decent': (quality.lower() in ('brrip', 'bluray', 'webrip', 'web-dl')) and resolution == '720p'
+        }
+
+    return movies
+
+
 def download(id, magnet=False):
-    transmission_server = 'http://127.0.0.1:9091/ui/rpc'
+    transmission_server = 'http://10.1.1.11:9091/ui/rpc'
     
     if not magnet:
         magnet = get_magnet(id)
@@ -108,7 +163,8 @@ def download(id, magnet=False):
         "arguments": {
             "paused": False,
             "filename": magnet,
-            "download-dir": "/Volumes/Bertha 2TB/Movies/"
+#            "download-dir": "/Volumes/Bertha 2TB/Movies/Downloads/"
+            "download-dir": "/Volumes/Movies/Downloads/"
         }
     }
     r = requests.post(transmission_server, data=json.dumps(payload), headers=headers, verify=False)
@@ -128,6 +184,17 @@ def get_magnet(id):
 
 
 if __name__ == '__main__':
+    if '--list1337x' in sys.argv:
+        movies = list_top_1337x()
+        for i in movies:
+            h = hash(i)
+            if not exists(h, path='downloads'):
+                print('> ' + i)
+                for j in movies[i]:
+                    print('\t\t%s %s (%s) [%s, %s]' % (
+                        movies[i][j]['id'], movies[i][j]['resolution'], movies[i][j]['quality'], movies[i][j]['se'], movies[i][j]['le']))
+
+
     if '--list' in sys.argv:
         movies = list_top100()
         for i in movies:
@@ -165,7 +232,7 @@ if __name__ == '__main__':
     # --download <id> <name>
     if '--download' in sys.argv:
         id = sys.argv[2]
-        name = sys.argv[3]
+        name = sys.argv[3] if len(sys.argv) > 3 else str(id)
         h = hash(name)
         magnet = get_magnet(id)
         # print(magnet)
@@ -191,6 +258,28 @@ if __name__ == '__main__':
                 for j in movies[i]:
                     print('\t\t%s %s (%s) [%s, %s]' % (
                         movies[i][j]['id'], movies[i][j]['resolution'], movies[i][j]['quality'], movies[i][j]['se'], movies[i][j]['le']))
+
+
+    if '--lucky' in sys.argv:
+        movies = list_top100(page="/s/?video=on&category=0&page=0&orderby=99&q=%s" % sys.argv[2])
+        if len(movies) < 1:
+            print('no results')
+            exit()
+
+        t = ''
+        for i in movies:
+            t = i
+            break
+
+        first = movies[t]
+        for j in first:
+            if first[j]['good']:
+                print(first[j]['hash'])
+                print('%s %s %s (%s) [%s, %s]' % (
+                        first[j]['title'], first[j]['id'], first[j]['resolution'], first[j]['quality'], first[j]['se'], first[j]['le']))
+                magnet = get_magnet(first[j]['id'])
+                download(first[j]['hash'], magnet)
+                exit()
 
 
     if '--help' in sys.argv:

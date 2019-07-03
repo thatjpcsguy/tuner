@@ -111,7 +111,7 @@ def check_new_eps_active():
     res = db.store_result()
     i = res.fetch_row(how=1)
     while i:
-        update_available_eps(i[0]['url'].replace('eztv.it', config.get("eztv", "host")).replace('eztv.ag', config.get("eztv", "host")), i[0]['show_id'])
+        update_available_eps(i[0]['url'], i[0]['show_id'])
         i = res.fetch_row(how=1)
 
 
@@ -130,7 +130,7 @@ def download_missing():
 
     headers = {'X-Transmission-Session-Id': session}
 
-    db.query("SELECT s.show_id, season, number, path, MIN(magnet) magnet, s.name show_name, e.episode_id episode_id FROM episodes e JOIN shows s ON e.show_id = s.show_id  WHERE `download` = 1 GROUP BY s.show_id, season, number, s.name, path HAVING MAX(downloaded) = 0")
+    db.query("SELECT s.show_id, season, number, path, MIN(magnet) magnet, s.name show_name, MIN(e.episode_id) episode_id FROM episodes e JOIN shows s ON e.show_id = s.show_id  WHERE `download` = 1 GROUP BY s.show_id, season, number, s.name, path HAVING MAX(downloaded) = 0")
     res = db.store_result()
     i = res.fetch_row(how=1)
     
@@ -222,29 +222,31 @@ if __name__ == '__main__':
         check_new_eps_active()
         download_missing()
 
-    if sys.argv[1] == "got":
+    if sys.argv[1] == "--got":
+        update_available_eps('/shows/481/game-of-thrones/', 481)
         list_quality(481, 8)
+        download_missing()
 
-    if sys.argv[1] == "dl":
+    if sys.argv[1] == "--dl":
         download_id(sys.argv[2])
 
-    if sys.argv[1] == "search":
+    if sys.argv[1] == "--search":
         search(sys.argv[2])
 
-    if sys.argv[1] == "list":
+    if sys.argv[1] == "--list":
         if len(sys.argv) > 3:
             list_quality(sys.argv[2], sys.argv[3])
         else:
             list_quality(sys.argv[2])
 
-    if sys.argv[1] == "add":
+    if sys.argv[1] == "--add":
         add(sys.argv[2])
 
     if '--help' in sys.argv:
         print("""./tv.py
-    got
-    search <name>
-    list <show_id> <season>
-    dl <episode_id>
-    add <show_id>
+    --got
+    --search <name>
+    --list <show_id> <season>
+    --dl <episode_id>
+    --add <show_id>
     --auto""")
