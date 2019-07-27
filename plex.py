@@ -18,6 +18,7 @@ movies_directory = '/Volumes/Bertha 2TB/Movies/Clean/'
 plex = PlexServer(plex_url, plex_token)
 
 movies = plex.library.section('Movies')
+tv = plex.library.section('TV Shows')
 # print(account._token)
 
 
@@ -81,15 +82,19 @@ if __name__ == '__main__':
                             # print("\tSize: %s" % part.size)
                             print("")
 
-                
 
     if '--optimize' in sys.argv:
         plex.library.cleanBundles()
         plex.library.optimize()
 
+
+    if '--maintenance' in sys.argv:
         movies.analyze()
         movies.emptyTrash()
         movies.update()
+        tv.analyze()
+        tv.emptyTrash()
+        tv.update()
 
 
     if '--fix' in sys.argv:
