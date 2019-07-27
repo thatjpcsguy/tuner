@@ -24,6 +24,8 @@ def hash(x):
 
 
 def exists(h, path='cache'):
+    if '--nocache' in sys.argv:
+        return False
     if os.path.isfile(path + '/%s.pickle' % h):
         return True
     return False
@@ -63,14 +65,15 @@ def list_top100(page=_page):
             resolution = info['resolution'] if 'resolution' in info else 'Unknown'
             year = info['year'] if 'year' in info else 'XXXX'
             title = info['title'].strip().rstrip('.').lower()
+            lookup_title = '%s %s' % (title, year)
 
             magnet = ''
 
-            if title not in movies:
-                movies[title] = {}
+            if lookup_title not in movies:
+                movies[lookup_title] = {}
 
-            movies[title][id] = {
-                'hash': hash(title),
+            movies[lookup_title][id] = {
+                'hash': hash(lookup_title),
                 'title': title,
                 'id': id,
                 'url': href,
@@ -142,15 +145,34 @@ def list_top_1337x(page=_page_1337x):
     return movies
 
 
-def download(id, magnet=False):
-    transmission_server = 'http://10.1.1.11:9091/ui/rpc'
-    
-    if not magnet:
-        magnet = get_magnet(id)
-    
-    if exists(id, path='downloads'):
-        return True
+def download_deluge(magnet, directory):
+    deluge_server = 'http://10.1.1.11:8112/json'
 
+    cookies = None
+    headers = {'Content-Type': 'application/json',
+               'Accept': 'application/json'}
+
+    payload = {"id": 1, "method": "auth.login", "params": ["deluge"]}
+    response = requests.post(deluge_server, data=json.dumps(
+        payload), headers=headers, cookies=cookies)
+
+    auth = response.json()
+    # print(auth)
+    cookies = response.cookies
+    # print(cookies)
+
+    payload = json.dumps({"id": 2, "method": "webapi.add_torrent", "params": [magnet, {"move_completed_path": directory, "move_completed": True, "download_path": "/Volumes/Orange/Incomplete"}]})
+    # print(payload)
+
+    response = requests.post(deluge_server, data=payload, headers=headers, cookies=cookies)
+
+    # print(response.json())
+
+    return response.status_code
+
+
+def download_transmission(magnet, directory):
+    transmission_server = 'http://10.1.1.11:9091/transmission/rpc'
     csrf = requests.get(transmission_server)
     soup = BeautifulSoup(csrf.text, "lxml")
     # print soup.code
@@ -163,12 +185,32 @@ def download(id, magnet=False):
         "arguments": {
             "paused": False,
             "filename": magnet,
-#            "download-dir": "/Volumes/Bertha 2TB/Movies/Downloads/"
-            "download-dir": "/Volumes/Movies/Downloads/"
+            "download-dir": directory
         }
     }
-    r = requests.post(transmission_server, data=json.dumps(payload), headers=headers, verify=False)
-    if r.status_code == 200:
+    r = requests.post(transmission_server, data=json.dumps(
+        payload), headers=headers, verify=False)
+
+    
+
+    return r.status_code
+
+
+def download(id, magnet=False):
+    directory = "/Volumes/Bertha 2TB/Movies/Downloads"
+    
+    if not magnet:
+        magnet = get_magnet(id)
+    
+    if exists(id, path='downloads'):
+        return True
+
+    # t = download_transmission(magnet, directory)
+    # t = 200
+    t = download_deluge(magnet, directory)
+   
+    # print(t, d)
+    if t == 200:
         save(id, magnet, path='downloads')
         return True
     return False

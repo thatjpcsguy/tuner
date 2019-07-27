@@ -30,7 +30,9 @@ episode_info_regex = re.compile(ur'(S?([0-9]{1,2})[x|E]([0-9]{1,2}))', re.IGNORE
 episode_id_regex = re.compile(ur'/ep/([0-9]*)/', re.IGNORECASE)
 episode_magnet_regex = re.compile(ur' href="(.*)" rel', re.IGNORECASE)
 
-transmission_server = config.get("transmission", "host") + "/ui/rpc"
+transmission_server = config.get("transmission", "host") + "/transmission/rpc"
+deluge_server = config.get("deluge", "host") + "/json"
+
 
 db = None
 
@@ -120,31 +122,65 @@ def add(id):
     db.query("UPDATE shows SET download = 1 WHERE show_id = %s" % (id))
 
 
-def download_missing():
-    db = get_db()
+def download_deluge(magnet, directory):
+    deluge_server = 'http://10.1.1.11:8112/json'
+
+    cookies = None
+    headers = {'Content-Type': 'application/json',
+               'Accept': 'application/json'}
+
+    payload = {"id": 1, "method": "auth.login", "params": ["deluge"]}
+    response = requests.post(deluge_server, data=json.dumps(
+        payload), headers=headers, cookies=cookies)
+
+    auth = response.json()
+    # print(auth)
+    cookies = response.cookies
+    # print(cookies)
+
+    payload = json.dumps({"id": 2, "method": "webapi.add_torrent", "params": [magnet, {
+                         "move_completed_path": directory, "move_completed": True, "download_path": "/Volumes/Orange/Incomplete"}]})
+
+    response = requests.post(deluge_server, data=payload,
+                             headers=headers, cookies=cookies)
+
+    return response.status_code
+
+def download_transmission(magnet, directory):
     csrf = requests.get(transmission_server)
     soup = BeautifulSoup(csrf.text, "lxml")
     if soup.code is None:
         exit()
     session = soup.code.get_text().split(":")[1].strip()
-
     headers = {'X-Transmission-Session-Id': session}
+    payload = {
+        "method": "torrent-add",
+        "arguments": {
+            "paused": False,
+            "filename": magnet,
+            "download-dir": directory
+        }
+    }
+    r = requests.post(transmission_server, data=json.dumps(
+        payload), headers=headers, verify=False)
 
+    return r.status_code
+
+
+
+def download_missing():
+    db = get_db()
     db.query("SELECT s.show_id, season, number, path, MIN(magnet) magnet, s.name show_name, MIN(e.episode_id) episode_id FROM episodes e JOIN shows s ON e.show_id = s.show_id  WHERE `download` = 1 GROUP BY s.show_id, season, number, s.name, path HAVING MAX(downloaded) = 0")
     res = db.store_result()
     i = res.fetch_row(how=1)
-    
+
     while i:
-        payload = {
-                "method": "torrent-add",
-                "arguments": {
-                    "paused": False,
-                    "filename": i[0]['magnet'],
-                    "download-dir": config.get("transmission", "dir") + "/%s/season %s/" % (i[0]['path'].replace("-", " "), i[0]['season'])
-                }
-            }
-        r = requests.post(transmission_server, data=json.dumps(payload), headers=headers, verify=False)
-        if r.status_code == 200:
+        download_path = config.get("transmission", "dir") + \
+            "/%s/season %s/" % (i[0]['path'].replace("-", " "), i[0]['season'])
+
+        status = download_deluge(i[0]['magnet'], download_path)
+        
+        if status == 200:
             db.query("UPDATE episodes SET downloaded = 1 WHERE episode_id = %s" % (i[0]['episode_id']))
 
         i = res.fetch_row(how=1)
