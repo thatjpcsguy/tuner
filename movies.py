@@ -42,7 +42,6 @@ def load(h, path='cache'):
 
 
 def list_top100(page=_page):
-    # print(page)
     ep = requests.get(_host + page)
     soup = BeautifulSoup(ep.text, "lxml")
 
@@ -50,15 +49,11 @@ def list_top100(page=_page):
 
     for row in soup.find_all('tr'):
         for a in row.find_all('a', href=True, class_='detLink'):
-            # print(se)
             cells = row.find_all("td", {"align": "right"})
-            # print(cells)
             se = cells[0].string if cells else 0
             le = cells[1].string if cells else 0
             href = a.get('href')
             id = href.split('/torrent/')[1].split('/')[0]
-            # print id
-            # exit()
             name = a.get_text()
             info = PTN.parse(name)
             quality = info['quality'] if 'quality' in info else 'Unknown'
@@ -92,59 +87,6 @@ def list_top100(page=_page):
     return movies
 
 
-def list_top_1337x(page=_page_1337x):
-    ep = requests.get(_host_1337x + page)
-    soup = BeautifulSoup(ep.text, "lxml")
-
-    movies = {}
-    for row in soup.find_all('tr'):
-        # print('new row:')
-        # print(row)
-        links = row.find_all('a', href=True)
-        # print(links)
-        if not links:
-            continue
-        a = links[1]
-
-        se = row.find_all('td', class_='seeds')[0].get_text()
-        le = row.find_all('td', class_='leeches')[0].get_text()
-        # print(se, le)
-
-        href = a.get('href')
-        id = href.split('/torrent/')[1].split('/')[0]
-
-        name = a.get_text()
-        info = PTN.parse(name)
-        quality = info['quality'] if 'quality' in info else 'Unknown'
-        resolution = info['resolution'] if 'resolution' in info else 'Unknown'
-        year = info['year'] if 'year' in info else 'XXXX'
-        title = info['title'].strip().rstrip('.')
-
-        magnet = ''
-
-        if title not in movies:
-            movies[title] = {}
-
-        movies[title][id] = {
-            'hash': hash(title),
-            'title': title,
-            'id': id,
-            'url': href,
-            'magnet': False,
-            'le': le,
-            'se': se,
-            'year': year, 
-            'raw': name, 
-            'quality': quality, 
-            'resolution': resolution,
-            'parse': info,
-            'good': (quality.lower() in ('brrip', 'bluray', 'webrip', 'web-dl')) and resolution == '1080p',
-            'decent': (quality.lower() in ('brrip', 'bluray', 'webrip', 'web-dl')) and resolution == '720p'
-        }
-
-    return movies
-
-
 def download_deluge(magnet, directory):
     deluge_server = 'http://10.1.1.11:8112/json'
 
@@ -157,16 +99,11 @@ def download_deluge(magnet, directory):
         payload), headers=headers, cookies=cookies)
 
     auth = response.json()
-    # print(auth)
     cookies = response.cookies
-    # print(cookies)
 
     payload = json.dumps({"id": 2, "method": "webapi.add_torrent", "params": [magnet, {"move_completed_path": directory, "move_completed": True, "download_path": "/Volumes/Orange/Incomplete"}]})
-    # print(payload)
 
     response = requests.post(deluge_server, data=payload, headers=headers, cookies=cookies)
-
-    # print(response.json())
 
     return response.status_code
 
