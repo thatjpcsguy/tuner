@@ -33,8 +33,6 @@ if __name__ == '__main__':
                     print("\tFile: %s" % part.file)
                 
                 print("")
-
-            # print(movie.media)
             print('')
 
     if '--cleanup' in sys.argv:
@@ -91,26 +89,3 @@ if __name__ == '__main__':
         tv.update()
 
 
-    if '--fix' in sys.argv:
-        print('--fix 3')
-
-        directory = os.fsencode(movies_directory)
-
-        for file in os.listdir(directory):
-            filename = os.fsdecode(file)
-            if filename.endswith(".None"):
-                 
-
-                print(filename)
-                old = movies_directory + filename
-                new = movies_directory + filename.rstrip('.None') + '_fix.mp4' 
-
-                print('mv '+ old  + ' ' + new)
-                try:
-                    shutil.move(old, new)
-                    print("Moved")
-                except:
-                    print('Failed to move')
-                
-                time.sleep(5)
-                

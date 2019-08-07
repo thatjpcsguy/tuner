@@ -142,9 +142,9 @@ def download(id, magnet=False):
     if exists(id, path='downloads'):
         return True
 
-    # t = download_transmission(magnet, directory)
+    t = download_transmission(magnet, directory)
     # t = 200
-    t = download_deluge(magnet, directory)
+    # t = download_deluge(magnet, directory)
    
     # print(t, d)
     if t == 200:
