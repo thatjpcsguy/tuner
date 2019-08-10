@@ -178,7 +178,7 @@ def download_missing():
         download_path = config.get("transmission", "dir") + \
             "/%s/season %s/" % (i[0]['path'].replace("-", " "), i[0]['season'])
 
-        status = download_deluge(i[0]['magnet'], download_path)
+        status = download_transmission(i[0]['magnet'], download_path)
         
         if status == 200:
             db.query("UPDATE episodes SET downloaded = 1 WHERE episode_id = %s" % (i[0]['episode_id']))

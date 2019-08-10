@@ -134,7 +134,7 @@ def download_transmission(magnet, directory):
 
 
 def download(id, magnet=False):
-    directory = "/Volumes/Bertha 2TB/Movies/Downloads"
+    directory = "/Volumes/Blue/Movies/"
     
     if not magnet:
         magnet = get_magnet(id)
