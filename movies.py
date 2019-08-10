@@ -238,6 +238,30 @@ if __name__ == '__main__':
                     print('\t\t%s %s (%s) [%s, %s]' % (
                         movies[i][j]['id'], movies[i][j]['resolution'], movies[i][j]['quality'], movies[i][j]['se'], movies[i][j]['le']))
 
+    if '--top250' in sys.argv:
+        for movie in open('imdb_stripped2.txt'):
+            print(movie.strip())
+            movies = list_top100(
+                                page="/s/?video=on&category=0&page=0&orderby=99&q=%s" % movie.strip().lower())
+            if len(movies) < 1:
+                print('no results')
+                exit()
+
+            t = ''
+            for i in movies:
+                t = i
+                break
+
+            first = movies[t]
+            for j in first:
+                if first[j]['good']:
+                    print(first[j]['hash'])
+                    print('%s %s %s (%s) [%s, %s]' % (
+                        first[j]['title'], first[j]['id'], first[j]['resolution'], first[j]['quality'], first[j]['se'], first[j]['le']))
+                    magnet = get_magnet(first[j]['id'])
+                    download(first[j]['hash'], magnet)
+                    exit()
+
 
     if '--lucky' in sys.argv:
         movies = list_top100(page="/s/?video=on&category=0&page=0&orderby=99&q=%s" % sys.argv[2])
