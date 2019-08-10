@@ -165,6 +165,11 @@ def get_magnet(id):
 def lucky(search):
     movies = list_top100(
         page="/s/?video=on&category=0&page=0&orderby=99&q=%s" % search)
+
+    h = hash(search)
+    if exists(h, path='downloads'):
+        return
+
     if len(movies) < 1:
         print('no results')
         return
