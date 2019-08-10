@@ -162,6 +162,28 @@ def get_magnet(id):
     return load(id, path='magnets')
 
 
+def lucky(search):
+    movies = list_top100(
+        page="/s/?video=on&category=0&page=0&orderby=99&q=%s" % search)
+    if len(movies) < 1:
+        print('no results')
+        return
+
+    t = ''
+    for i in movies:
+        t = i
+        break
+
+    first = movies[t]
+    for j in first:
+        if first[j]['good']:
+            print(first[j]['hash'])
+            print('%s %s %s (%s) [%s, %s]' % (
+                first[j]['title'], first[j]['id'], first[j]['resolution'], first[j]['quality'], first[j]['se'], first[j]['le']))
+            magnet = get_magnet(first[j]['id'])
+            download(first[j]['hash'], magnet)
+            return
+
 if __name__ == '__main__':
     if '--list1337x' in sys.argv:
         movies = list_top_1337x()
@@ -241,48 +263,10 @@ if __name__ == '__main__':
     if '--top250' in sys.argv:
         for movie in open('imdb_stripped2.txt'):
             print(movie.strip())
-            movies = list_top100(
-                                page="/s/?video=on&category=0&page=0&orderby=99&q=%s" % movie.strip().lower())
-            if len(movies) < 1:
-                print('no results')
-                exit()
-
-            t = ''
-            for i in movies:
-                t = i
-                break
-
-            first = movies[t]
-            for j in first:
-                if first[j]['good']:
-                    print(first[j]['hash'])
-                    print('%s %s %s (%s) [%s, %s]' % (
-                        first[j]['title'], first[j]['id'], first[j]['resolution'], first[j]['quality'], first[j]['se'], first[j]['le']))
-                    magnet = get_magnet(first[j]['id'])
-                    download(first[j]['hash'], magnet)
-                    exit()
-
+            lucky(movie.strip().lower())
 
     if '--lucky' in sys.argv:
-        movies = list_top100(page="/s/?video=on&category=0&page=0&orderby=99&q=%s" % sys.argv[2])
-        if len(movies) < 1:
-            print('no results')
-            exit()
-
-        t = ''
-        for i in movies:
-            t = i
-            break
-
-        first = movies[t]
-        for j in first:
-            if first[j]['good']:
-                print(first[j]['hash'])
-                print('%s %s %s (%s) [%s, %s]' % (
-                        first[j]['title'], first[j]['id'], first[j]['resolution'], first[j]['quality'], first[j]['se'], first[j]['le']))
-                magnet = get_magnet(first[j]['id'])
-                download(first[j]['hash'], magnet)
-                exit()
+        lucky(sys.argv[2])
 
 
     if '--help' in sys.argv:
