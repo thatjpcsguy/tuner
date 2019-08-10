@@ -265,8 +265,8 @@ if __name__ == '__main__':
                     print('\t\t%s %s (%s) [%s, %s]' % (
                         movies[i][j]['id'], movies[i][j]['resolution'], movies[i][j]['quality'], movies[i][j]['se'], movies[i][j]['le']))
 
-    if '--top250' in sys.argv:
-        for movie in open('imdb_stripped2.txt'):
+    if '--file' in sys.argv:
+        for movie in open(sys.argv[2]):
             print(movie.strip())
             lucky(movie.strip().lower().replace("'", "").replace(":", "").replace(',', ""))
 
