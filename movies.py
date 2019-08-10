@@ -132,6 +132,15 @@ def download_transmission(magnet, directory):
 
     return r.status_code
 
+def strip_junk(s):
+    s = s.strip()
+    bad_chars = "';:!*()[].,"
+
+    for i in bad_chars:
+        s = s.replace(i, '')
+
+    return s
+
 
 def download(id, magnet=False):
     directory = "/Volumes/Blue/Movies/"
@@ -163,6 +172,7 @@ def get_magnet(id):
 
 
 def lucky(search):
+    search = strip_junk(search)
     h = hash(search)
     if exists(h, path='downloads'):
         return
@@ -267,8 +277,8 @@ if __name__ == '__main__':
 
     if '--file' in sys.argv:
         for movie in open(sys.argv[2]):
-            print(movie.strip())
-            lucky(movie.strip().lower().replace("'", "").replace(":", "").replace(',', ""))
+            print(movie)
+            lucky(movie)
 
     if '--lucky' in sys.argv:
         lucky(sys.argv[2])
@@ -281,4 +291,5 @@ if __name__ == '__main__':
     --list
     --download <id> <name>
     --auto""")
+
 
