@@ -268,7 +268,7 @@ if __name__ == '__main__':
     if '--top250' in sys.argv:
         for movie in open('imdb_stripped2.txt'):
             print(movie.strip())
-            lucky(movie.strip().lower())
+            lucky(movie.strip().lower().replace("'", "").replace(":", "").replace(',', ""))
 
     if '--lucky' in sys.argv:
         lucky(sys.argv[2])
