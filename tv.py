@@ -107,9 +107,12 @@ def update_available_eps(url, show_id):
 
 
 
-def check_new_eps_active():
+def check_new_eps_active(show_id=False):
     db = get_db()
-    db.query("SELECT * FROM shows WHERE `download` = 1")
+    if show_id:
+        db.query("SELECT * FROM shows WHERE `show_id` = %s" % (show_id))
+    else:
+        db.query("SELECT * FROM shows WHERE `download` = 1")
     res = db.store_result()
     i = res.fetch_row(how=1)
     while i:
@@ -259,8 +262,7 @@ if __name__ == '__main__':
         download_missing()
 
     if sys.argv[1] == "--got":
-        update_available_eps('/shows/481/game-of-thrones/', 481)
-        list_quality(481, 8)
+        check_new_eps_active(481)
         download_missing()
 
     if sys.argv[1] == "--dl":
@@ -277,6 +279,9 @@ if __name__ == '__main__':
 
     if sys.argv[1] == "--add":
         add(sys.argv[2])
+        check_new_eps_active(sys.argv[2])
+        download_missing()
+
 
     if '--help' in sys.argv:
         print("""./tv.py
