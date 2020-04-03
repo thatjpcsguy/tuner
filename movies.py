@@ -15,6 +15,8 @@ import PTN
 
 
 _host = 'https://thepiratebay.org'
+_host = 'https://tpb.cool'
+#_host = 'https://piratebay.life'
 _page = '/top/207'
 _host_1337x = 'http://1337x.to'
 _page_1337x = '/top-100-eng-movies'
@@ -109,7 +111,7 @@ def download_deluge(magnet, directory):
 
 
 def download_transmission(magnet, directory):
-    transmission_server = 'http://10.1.1.11:9091/transmission/rpc'
+    transmission_server = 'http://10.1.1.12:9092/transmission/rpc'
     csrf = requests.get(transmission_server)
     soup = BeautifulSoup(csrf.text, "lxml")
     # print soup.code
@@ -246,12 +248,17 @@ if __name__ == '__main__':
 
 
     # --download <id> <name>
-    if '--download' in sys.argv:
+    if '--download' in sys.argv or '--dl' in sys.argv:
         id = sys.argv[2]
         name = sys.argv[3] if len(sys.argv) > 3 else str(id)
         h = hash(name)
         magnet = get_magnet(id)
         # print(magnet)
+        download(h, magnet)
+
+    if '--magnet' in sys.argv:
+        magnet = sys.argv[2]
+        h = hash(magnet)
         download(h, magnet)
 
     # --cache <name>
