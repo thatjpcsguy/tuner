@@ -32,11 +32,11 @@ def get_db():
     global db
     global cursor
     if db is None:
-        print("Connecting to database...")
+        #print("Connecting to database...")
         db = pymysql.connect(host=config.get("db", "host"), user=config.get("db", "user"), passwd=config.get("db", "passwd"), db=config.get("db", "db"), cursorclass=pymysql.cursors.DictCursor)
 
     if cursor is None:
-        print("Creating cursor object...")
+        #print("Creating cursor object...")
         cursor = db.cursor()
 
     # print("Database connection successful!")
@@ -76,7 +76,7 @@ def update_available_shows():
 
 def update_available_eps(url, show_id):
     db, cursor = get_db()
-    print(url)
+    #print(url)
 
     ep = requests.get('%s%s' % (config.get("eztv", "host"), url))
     eps = BeautifulSoup(ep.text, "lxml")
@@ -113,7 +113,10 @@ def check_new_eps_active(show_id=False):
     if show_id:
         cursor.execute("SELECT * FROM shows WHERE `show_id` = %s", (show_id, ))
     else:
-        cursor.execute("SELECT * FROM shows WHERE `download` = 1")
+        if '--airing' in sys.argv:
+            cursor.execute("SELECT * FROM shows WHERE `download` = 1 AND status LIKE '%Airing%'")
+        else:
+            cursor.execute("SELECT * FROM shows WHERE `download` = 1")
 
     rows = cursor.fetchall()
     for row in rows:
@@ -226,7 +229,7 @@ def download_id(episode_id):
     rows = cursor.fetchall()
 
     for row in rows:
-        print('%s - Season %s, Episode %s' % (row['show_name'], row['season'], row['number']))
+        #print('%s - Season %s, Episode %s' % (row['show_name'], row['season'], row['number']))
         payload = {
             "method": "torrent-add",
             "arguments": {
@@ -238,7 +241,7 @@ def download_id(episode_id):
         r = requests.post(transmission_server, data=json.dumps(
             payload), headers=headers, verify=False)
         if r.status_code == 200:
-            print("downloading")
+            #print("downloading")
             cursor.execute("UPDATE episodes SET downloaded = 1 WHERE episode_id = %s", (row['episode_id'], ))
             db.commit()
         else:
@@ -249,11 +252,11 @@ def download_id(episode_id):
 if __name__ == '__main__':
     if len(sys.argv) > 1:
         if sys.argv[1] == "--auto":
-            print("Update available shows")
+            #print("Update available shows")
             update_available_shows()
-            print("Checking if new episodes are available")
+            #print("Checking if new episodes are available")
             check_new_eps_active()
-            print("Downloading new episodes")
+            #print("Downloading new episodes")
             download_missing()
 
         if '--download' in sys.argv or '--dl' in sys.argv:

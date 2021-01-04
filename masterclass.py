@@ -15,11 +15,6 @@ import PTN
 
 
 _host = 'https://apibay.org'
-# _host = 'https://thepiratebay.org'
-# _host = 'https://tpb.cool'
-#_host = 'https://tpb.bike'
-#_host = 'https://piratebay.life'
-# _page = '/top/207'
 _page = '/search.php?q=top100:207'
 _host_1337x = 'http://1337x.to'
 _page_1337x = '/top-100-eng-movies'
@@ -145,7 +140,7 @@ def strip_junk(s):
 
 
 def download(id, magnet=False):
-    directory = "/Volumes/Blue/Movies/"
+    directory = "/Volumes/Blue/Masterclass/"
     
     if not magnet:
         magnet = get_magnet(id)
