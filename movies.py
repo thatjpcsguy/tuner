@@ -111,13 +111,6 @@ def auto_1337x():
                 if current['good']:
                     driver.get(current['url'])
                     
-                    # magnet = None
-                    # links = driver.find_elements_by_tag_name('a')
-
-                    # for link in links:
-                    #     print(link.text)
-                    #     print(link.get_attribute('href'))
-
                     magnet_link = driver.find_element_by_partial_link_text('MAGNET DOW')
                     print(magnet_link.get_attribute('href'))
 
@@ -235,7 +228,7 @@ def strip_junk(s):
 
 
 def download(id, magnet=False):
-    directory = "/Volumes/Blue/Movies/"
+    directory = "/Volumes/Red/Movies/"
     
     if not magnet:
         magnet = get_magnet(id)
@@ -312,7 +305,7 @@ def lucky(search):
 
 
 if __name__ == '__main__':
-    if '--auto1337' in sys.argv:
+    if '--auto' in sys.argv:
         auto_1337x()
         # for i in movies:
         #     h = hash(i)
@@ -334,7 +327,7 @@ if __name__ == '__main__':
                         movies[i][j]['id'], movies[i][j]['resolution'], movies[i][j]['quality'], movies[i][j]['se'], movies[i][j]['le']))
 
 
-    if '--auto' in sys.argv:
+    if '--autotpb' in sys.argv:
         movies = list_top100()
         for i in movies:
             h = hash(i)
